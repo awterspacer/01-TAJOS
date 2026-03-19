@@ -1,7 +1,7 @@
 # 01-TAJOS
 Sistema de gestión de caja, portal para barberos y landing page para la barbería más potente de la región. 
 
-# ✂ TAJOS · Sistema de Gestión para Barbería
+# TAJOS · Sistema de Gestión para Barbería
 
 Sistema web de gestión integral para barberías con múltiples sucursales. Corre 100% en el navegador, sin servidor propio, usando **Supabase** como backend en la nube y **GitHub Pages** como hosting estático.
 
@@ -35,8 +35,8 @@ Usuario
 ┌─────────────────────────────┐
 │     Navegador (cliente)     │
 │                             │
-│  TAJOS-MNGMNT_v01_0.html        │
-│  TAJOS-BRBRS_V01_0.html       │
+│  TAJOS-MNGMNT_v01_0.html    │
+│  TAJOS-BRBRS_V01_0.html     │
 │                             │
 │  ┌──────────┐  ┌─────────┐  │
 │  │IndexedDB │  │ Pending │  │
@@ -57,11 +57,11 @@ Usuario
 
 ```
 tajos/
-├── index.html              # Página de inicio con links a ambas apps
+├── index.html                  # Página de inicio con links a ambas apps
 ├── TAJOS-MNGMNT_v01_0.html     # App principal: admin y cajeros
-├── TAJOS-BRBRS_V01_0.html    # Portal exclusivo para barberos
-├── supabase_schema.sql     # Schema completo para inicializar Supabase
-└── README.md               # Este archivo
+├── TAJOS-BRBRS_V01_0.html      # Portal exclusivo para barberos
+├── supabase_schema.sql         # Schema completo para inicializar Supabase
+└── README.md                   # Este archivo
 ```
 
 ### `TAJOS-MNGMNT_v01_0.html` — App principal
