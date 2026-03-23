@@ -437,7 +437,63 @@ tbody tr:last-child td{border-bottom:none;}
 </div>
 
 <script>
-// ══ DB ══
+// ══ CONFIGURACIÓN SUPABASE ══
+const SUPA_URL = 'https://tgwhegmgchnttsmrhcfc.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnd2hlZ21nY2hudHRzbXJoY2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODg1ODgsImV4cCI6MjA4OTQ2NDU4OH0.3g20p6yGber_j6HNB5oQqesOm_YgQ_fo9P2Yl2jGPbM';
+
+const STORE_TABLE = {
+  barberos:'barberos', clientes:'clientes', servicios:'servicios', productos:'productos',
+  turnos:'turnos', cobros:'cobros', usuarios:'usuarios', historial:'historial',
+  arqueos:'arqueos', barberoUsers:'barbero_users', adelantos:'adelantos',
+  egresos:'egresos', giftcards:'giftcards', categoriasServ:'categorias_serv', categoriasProd:'categorias_prod',
+};
+
+const FIELD_TO_DB = {
+  barberoId:'barbero_id', clienteId:'cliente_id', productoId:'producto_id',
+  fechaIngreso:'fecha_ingreso', ultimoAcceso:'ultimo_acceso',
+  metodoPago:'metodo_pago', ultimoUso:'ultimo_uso',
+  montoSolicitado:'monto_solicitado', montoAprobado:'monto_aprobado',
+  fechaSolicitud:'fecha_solicitud', notaSolicitud:'nota_solicitud',
+  notaAdmin:'nota_admin', fechaAprobacion:'fecha_aprobacion',
+  barberoNombre:'barbero_nombre', clienteNombre:'cliente_nombre',
+  registradoPor:'registrado_por', giftcardId:'giftcard_id',
+};
+const FIELD_FROM_DB = Object.fromEntries(Object.entries(FIELD_TO_DB).map(([k,v])=>[v,k]));
+function toDbObj(obj){const r={};for(const [k,v] of Object.entries(obj)){const dk=FIELD_TO_DB[k]||k;r[dk]=(v!==undefined&&v!==null)?v:null;}return r;}
+function fromDbObj(obj){if(!obj)return null;const r={};for(const [k,v] of Object.entries(obj)){const ak=FIELD_FROM_DB[k]||k;r[ak]=v;}if(r.id!==undefined)r.id=Number(r.id);return r;}
+
+let _online=navigator.onLine;
+window.addEventListener('online', ()=>{_online=true; syncPending();});
+window.addEventListener('offline',()=>{ _online=false; });
+
+const PENDING_KEY='tajos_portal_pending';
+function getPending(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');}catch{return[];}}
+function savePending(ops){localStorage.setItem(PENDING_KEY,JSON.stringify(ops));}
+function addPending(op){const ops=getPending();ops.push(op);savePending(ops);}
+
+async function syncPending(){
+  const ops=getPending();if(!ops.length||!_online)return;
+  const remaining=[];
+  for(const op of ops){
+    try{
+      const tbl=STORE_TABLE[op.store]||op.store;
+      if(op.type==='insert'){const body=toDbObj(op.data);delete body.id;await supaFetch('POST',tbl,null,body);}
+      else if(op.type==='upsert'){await supaFetch('POST',tbl+'?on_conflict=id',null,toDbObj(op.data),{'Prefer':'resolution=merge-duplicates'});}
+      else if(op.type==='delete'){await supaFetch('DELETE',tbl,`id=eq.${op.id}`);}
+    }catch(e){remaining.push(op);}
+  }
+  savePending(remaining);
+}
+
+async function supaFetch(method,table,query,body,extraHeaders={}){
+  const url=`${SUPA_URL}/rest/v1/${table}${query?'?'+query:''}`;
+  const headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation',...extraHeaders};
+  const res=await fetch(url,{method,headers,body:body?JSON.stringify(body):undefined});
+  if(!res.ok){const err=await res.text();throw new Error(`Supabase ${method} ${table}: ${res.status} ${err}`);}
+  if(res.status===204)return null;
+  return res.json();
+}
+
 let db;
 const DB_NAME='TajosOS', DB_VER=4;
 
@@ -446,7 +502,6 @@ function initDB(){
     const r=indexedDB.open(DB_NAME, DB_VER);
     r.onupgradeneeded=e=>{
       const d=e.target.result;
-      // Todos los stores del sistema TAJOS
       ['barberos','clientes','servicios','productos','turnos','cobros','usuarios','historial','arqueos',
        'barberoUsers','adelantos','egresos','giftcards','categoriasServ','categoriasProd']
         .forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true});});
@@ -456,12 +511,44 @@ function initDB(){
   });
 }
 
-const dbAll=s=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
-const dbGet=(s,id)=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).get(Number(id));r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
-const dbAdd=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).add(d);r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
-const dbPut=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(d);r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
-const dbDel=(s,id)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(Number(id));r.onsuccess=()=>res();r.onerror=e=>rej(e);});
+const _idbAll=s=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
+const _idbGet=(s,id)=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).get(Number(id));r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
+const _idbAdd=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).add(d);r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
+const _idbPut=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(d);r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
+const _idbDel=(s,id)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(Number(id));r.onsuccess=()=>res();r.onerror=e=>rej(e);});
 
+async function _idbReplaceAll(store,rows){
+  const existing=await _idbAll(store);
+  for(const item of existing)await _idbDel(store,item.id);
+  for(const item of rows){const copy={...item};if(!copy.id)delete copy.id;await _idbAdd(store,copy);}
+}
+
+async function dbAll(store){
+  const tbl=STORE_TABLE[store]||store;
+  if(_online){try{const rows=await supaFetch('GET',tbl,'select=*&order=id.asc');const mapped=(rows||[]).map(fromDbObj);_idbReplaceAll(store,mapped).catch(()=>{});return mapped;}catch(e){console.warn('dbAll fallback:',e);}}
+  return _idbAll(store);
+}
+async function dbGet(store,id){
+  const tbl=STORE_TABLE[store]||store;
+  if(_online){try{const rows=await supaFetch('GET',tbl,`id=eq.${id}&select=*`);if(rows&&rows.length){const item=fromDbObj(rows[0]);_idbPut(store,item).catch(()=>{});return item;}}catch(e){console.warn('dbGet fallback:',e);}}
+  return _idbGet(store,Number(id));
+}
+async function dbAdd(store,data){
+  const tbl=STORE_TABLE[store]||store;const body=toDbObj({...data});delete body.id;
+  if(_online){try{const rows=await supaFetch('POST',tbl,null,body);if(rows&&rows.length){const saved=fromDbObj(rows[0]);_idbAdd(store,saved).catch(()=>{});return saved.id;}}catch(e){console.warn('dbAdd fallback:',e);}}
+  const localId=await _idbAdd(store,{...data});addPending({type:'insert',store,data:{...data,id:localId}});return localId;
+}
+async function dbPut(store,data){
+  const tbl=STORE_TABLE[store]||store;
+  if(_online){try{await supaFetch('PATCH',tbl,`id=eq.${data.id}`,toDbObj({...data}));_idbPut(store,data).catch(()=>{});return;}catch(e){console.warn('dbPut fallback:',e);}}
+  await _idbPut(store,data);addPending({type:'upsert',store,data});
+}
+async function dbDel(store,id){
+  const tbl=STORE_TABLE[store]||store;
+  if(_online){try{await supaFetch('DELETE',tbl,`id=eq.${id}`);_idbDel(store,id).catch(()=>{});return;}catch(e){console.warn('dbDel fallback:',e);}}
+  await _idbDel(store,id);addPending({type:'delete',store,id});
+}
+  
 // ══ STATE ══
 const ST={
   barberoUser:null,  // barberoUser record
