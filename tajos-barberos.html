@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAJOS · Portal Barberos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-deep:#0a0e1a;--bg-dark:#0f1525;--bg-card:#141b2d;--bg-raised:#1a2338;--bg-hover:#1f2a42;
+  --gold:#c9940a;--gold-light:#e8b020;--gold-pale:#f5cc60;--gold-dim:#6e500a;--gold-glow:rgba(201,148,10,0.18);
+  --text-main:#e8d9b0;--text-muted:#7a8aaa;--text-dim:#4a5570;
+  --danger:#c0392b;--danger-dim:rgba(192,57,43,0.15);
+  --success:#27ae60;--success-dim:rgba(39,174,96,0.15);
+  --border:rgba(201,148,10,0.18);--border-strong:rgba(201,148,10,0.4);
+  --radius:10px;--radius-lg:16px;
+  --shadow:0 4px 24px rgba(0,0,0,0.5);--shadow-gold:0 0 32px rgba(201,148,10,0.15);
+  --font-display:'Bebas Neue',sans-serif;--font-cond:'Barlow Condensed',sans-serif;--font-body:'Barlow',sans-serif;
+  --topbar-h:60px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;}
+body{background:var(--bg-deep);color:var(--text-main);font-family:var(--font-body);min-height:100vh;}
+::-webkit-scrollbar{width:6px;height:6px;}::-webkit-scrollbar-track{background:var(--bg-dark);}::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:3px;}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--bg-deep);z-index:9000;display:flex;align-items:center;justify-content:center;}
+#loginScreen.hidden{display:none;}
+.login-box{background:var(--bg-card);border:1px solid var(--border-strong);border-radius:var(--radius-lg);padding:48px 40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.7),var(--shadow-gold);animation:popIn .4s cubic-bezier(.34,1.56,.64,1);}
+.login-logo{text-align:center;margin-bottom:32px;}
+.login-logo .scissors{font-size:2.8rem;display:block;margin-bottom:6px;}
+.login-logo .brand{font-family:var(--font-display);font-size:2.6rem;color:var(--gold-light);letter-spacing:5px;}
+.login-logo .sub{font-size:.72rem;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-top:4px;}
+.login-error{background:var(--danger-dim);border:1px solid rgba(192,57,43,.4);border-radius:var(--radius);padding:10px 14px;font-size:.85rem;color:#e74c3c;margin-bottom:14px;display:none;align-items:center;gap:8px;}
+.login-error.show{display:flex;}
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh;}
+#app.show{display:flex;}
+
+/* TOPBAR */
+#topbar{height:var(--topbar-h);background:var(--bg-dark);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;position:sticky;top:0;z-index:50;}
+.topbar-brand{font-family:var(--font-display);font-size:1.5rem;color:var(--gold-light);letter-spacing:3px;}
+.topbar-sep{color:var(--border-strong);font-size:1.2rem;}
+.topbar-user{font-family:var(--font-cond);font-size:1rem;color:var(--text-muted);font-weight:600;}
+.topbar-clock{font-family:var(--font-cond);font-size:1rem;color:var(--gold);font-weight:600;letter-spacing:1px;margin-left:auto;}
+.topbar-date{font-size:.75rem;color:var(--text-muted);}
+
+/* NAV TABS */
+#navTabs{background:var(--bg-dark);border-bottom:1px solid var(--border);display:flex;padding:0 20px;gap:4px;overflow-x:auto;}
+.nav-tab{padding:12px 18px;font-family:var(--font-cond);font-weight:700;font-size:.9rem;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;margin-bottom:-1px;}
+.nav-tab:hover{color:var(--text-main);}
+.nav-tab.active{color:var(--gold-light);border-bottom-color:var(--gold);}
+
+/* CONTENT */
+#content{padding:24px 28px;flex:1;max-width:1100px;width:100%;margin:0 auto;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* CARDS */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);}
+.card:hover{border-color:var(--border-strong);}
+.card-title{font-family:var(--font-cond);font-size:1rem;font-weight:700;color:var(--gold-light);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;}
+.stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;position:relative;overflow:hidden;transition:transform .2s;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-gold);}
+.stat-label{font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-cond);}
+.stat-value{font-family:var(--font-display);font-size:2rem;color:var(--gold-light);letter-spacing:1px;margin:4px 0;}
+.stat-sub{font-size:.75rem;color:var(--text-dim);}
+.stat-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:2rem;opacity:.12;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.section-title{font-family:var(--font-display);font-size:1.8rem;color:var(--text-main);letter-spacing:2px;}
+.section-sub{font-size:.82rem;color:var(--text-muted);margin-top:2px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 18px;border-radius:var(--radius);border:none;font-family:var(--font-cond);font-size:.9rem;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#0a0e1a;box-shadow:0 2px 12px rgba(201,148,10,.3);}
+.btn-gold:hover{box-shadow:0 4px 20px rgba(201,148,10,.5);transform:translateY(-1px);}
+.btn-outline{background:transparent;border:1px solid var(--border-strong);color:var(--gold-light);}
+.btn-outline:hover{background:var(--gold-glow);}
+.btn-ghost{background:var(--bg-raised);color:var(--text-main);}
+.btn-ghost:hover{background:var(--bg-hover);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-danger:hover{background:#e74c3c;}
+.btn-sm{padding:5px 12px;font-size:.8rem;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* FORMS */
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:.78rem;color:var(--text-muted);margin-bottom:5px;font-family:var(--font-cond);letter-spacing:.5px;text-transform:uppercase;}
+.form-control{width:100%;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-main);padding:9px 13px;font-family:var(--font-body);font-size:.9rem;transition:border-color .2s;outline:none;}
+.form-control:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,148,10,.12);}
+.form-control::placeholder{color:var(--text-dim);}
+select.form-control option{background:var(--bg-card);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:var(--radius);}
+table{width:100%;border-collapse:collapse;font-size:.88rem;}
+thead tr{background:var(--bg-raised);}
+th{padding:10px 14px;text-align:left;font-family:var(--font-cond);font-size:.75rem;letter-spacing:1px;color:var(--gold);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:10px 14px;border-bottom:1px solid rgba(201,148,10,.06);vertical-align:middle;}
+tbody tr:hover{background:rgba(201,148,10,.04);}
+tbody tr:last-child td{border-bottom:none;}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:.72rem;font-family:var(--font-cond);font-weight:600;text-transform:uppercase;}
+.badge-gold{background:rgba(201,148,10,.18);color:var(--gold-light);}
+.badge-green{background:rgba(39,174,96,.15);color:#2ecc71;}
+.badge-red{background:rgba(192,57,43,.15);color:#e74c3c;}
+.badge-blue{background:rgba(41,128,185,.2);color:#5dade2;}
+.badge-gray{background:rgba(255,255,255,.06);color:var(--text-muted);}
+.badge-yellow{background:rgba(241,196,15,.15);color:#f1c40f;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;animation:fadeIn .2s ease;}
+.modal{background:var(--bg-card);border:1px solid var(--border-strong);border-radius:var(--radius-lg);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.7),var(--shadow-gold);animation:popIn .25s cubic-bezier(.34,1.56,.64,1);}
+.modal-lg{max-width:720px;}
+.modal-header{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:var(--font-cond);font-size:1.1rem;font-weight:700;color:var(--gold-light);text-transform:uppercase;letter-spacing:1px;}
+.modal-close{background:none;border:none;color:var(--text-muted);font-size:1.4rem;cursor:pointer;transition:color .2s;}
+.modal-close:hover{color:var(--text-main);}
+.modal-body{padding:20px 22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
+
+/* TOAST */
+#toastContainer{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--bg-raised);border:1px solid var(--border-strong);border-radius:var(--radius);padding:12px 18px;min-width:240px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);font-size:.88rem;animation:slideIn .3s cubic-bezier(.34,1.56,.64,1);}
+.toast.out{animation:slideOut .25s ease forwards;}
+.toast-success{border-left:3px solid var(--success);}
+.toast-error{border-left:3px solid var(--danger);}
+.toast-info{border-left:3px solid var(--gold);}
+
+/* AGENDA */
+.agenda-nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.agenda-date-label{font-family:var(--font-cond);font-size:1.1rem;font-weight:700;color:var(--text-main);min-width:200px;text-align:center;}
+.slot-cell{min-height:48px;border-radius:6px;padding:6px 8px;font-size:.82rem;cursor:pointer;transition:opacity .15s;margin:2px 0;}
+.slot-occupied{background:linear-gradient(135deg,rgba(201,148,10,.25),rgba(201,148,10,.12));border:1px solid rgba(201,148,10,.4);}
+.slot-empty{background:rgba(255,255,255,.02);border:1px dashed rgba(201,148,10,.1);color:var(--text-dim);font-size:.72rem;display:flex;align-items:center;justify-content:center;}
+.time-label{font-family:var(--font-cond);font-size:.78rem;color:var(--text-muted);padding:14px 8px 0;text-align:right;white-space:nowrap;}
+
+/* COMM BAR */
+.bar-wrap{background:var(--bg-raised);border-radius:4px;height:8px;overflow:hidden;margin:6px 0;}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:4px;transition:width .6s ease;}
+
+/* MISC */
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.empty-state{text-align:center;padding:40px 24px;color:var(--text-dim);}
+.empty-state .icon{font-size:3rem;margin-bottom:12px;opacity:.4;}
+.empty-state p{font-size:.9rem;}
+.alert{padding:11px 16px;border-radius:var(--radius);font-size:.85rem;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;}
+.alert-info{background:rgba(41,128,185,.12);border:1px solid rgba(41,128,185,.3);color:#5dade2;}
+.alert-warning{background:rgba(201,148,10,.1);border:1px solid var(--border-strong);color:var(--gold-light);}
+.alert-success{background:var(--success-dim);border:1px solid rgba(39,174,96,.3);color:#2ecc71;}
+.alert-danger{background:var(--danger-dim);border:1px solid rgba(192,57,43,.3);color:#e74c3c;}
+.pending-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(201,148,10,.6);margin-right:4px;animation:pulse 1.5s infinite;}
+
+/* REPORT PERIOD TABS */
+.period-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
+.period-tab{padding:6px 16px;border-radius:20px;font-family:var(--font-cond);font-weight:600;font-size:.82rem;cursor:pointer;border:1px solid var(--border);color:var(--text-muted);transition:all .2s;letter-spacing:.5px;}
+.period-tab:hover{border-color:var(--gold-dim);color:var(--text-main);}
+.period-tab.active{background:var(--gold);color:#000;border-color:var(--gold);}
+
+/* ADELANTO STATUS */
+.adelanto-pending{background:rgba(241,196,15,.08);border-left:3px solid #f1c40f;}
+.adelanto-approved{background:rgba(39,174,96,.08);border-left:3px solid var(--success);}
+.adelanto-rejected{background:var(--danger-dim);border-left:3px solid var(--danger);}
+
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.92) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(50px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOut{to{opacity:0;transform:translateX(50px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* PRINT */
+@media print{
+  #loginScreen,#topbar,#navTabs,.btn,.no-print{display:none!important;}
+  body{background:#fff !important;color:#1a3a6b !important;}
+  .card,.stat-card,.modal,.table-wrap{border-color:#1a3a6b !important;background:#fff !important;box-shadow:none !important;}
+  .card-title,.stat-label,.section-title,.topbar-brand{color:#1a3a6b !important;}
+  .stat-value,.history-amount,.bar-fill{color:#1a3a6b !important;background:#1a3a6b !important;}
+  th{color:#1a3a6b !important;border-color:#1a3a6b !important;}
+  td{border-color:rgba(26,58,107,.15) !important;color:#1a3a6b !important;}
+  .badge{border:1px solid #1a3a6b !important;color:#1a3a6b !important;background:#fff !important;}
+  .bar-wrap{background:#e8eef8 !important;}
+  .bar-fill{background:#1a3a6b !important;}
+  .stat-card::before{background:#1a3a6b !important;}
+  thead tr{background:#e8eef8 !important;}
+  #content{padding:0 !important;max-width:100% !important;}
+  .page{display:block !important;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr !important;}
+  .alert{border-color:#1a3a6b !important;color:#1a3a6b !important;background:#e8eef8 !important;}
+}
+
+@media(max-width:700px){
+  #content{padding:14px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr !important;}
+  .form-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="scissors">✂</span>
+      <div class="brand">TAJOS</div>
+      <div class="sub">Portal de Barberos</div>
+    </div>
+    <div class="login-error" id="loginError">❌ Usuario o PIN incorrecto</div>
+    <div class="form-group">
+      <label class="form-label">Usuario</label>
+      <input class="form-control" id="loginUser" placeholder="Tu usuario" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group">
+      <label class="form-label">PIN</label>
+      <input class="form-control" type="password" id="loginPin" placeholder="••••" maxlength="8" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button id="btnLoginPortal" class="btn btn-gold" style="width:100%;padding:12px;margin-top:6px" onclick="doLogin()">Ingresar</button>
+    <div style="text-align:center;margin-top:14px;font-size:.72rem;color:var(--text-dim)">TAJOS · Portal exclusivo para barberos</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="topbar">
+    <div class="topbar-brand">TAJOS</div>
+    <span class="topbar-sep">|</span>
+    <div class="topbar-user" id="topbarUser">—</div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+      <div class="topbar-date" id="topbarDate"></div>
+      <div class="topbar-clock" id="topbarClock"></div>
+      <button class="btn btn-outline btn-sm no-print" onclick="confirmLogout()">⏻ Salir</button>
+    </div>
+  </div>
+
+  <div id="navTabs">
+    <div class="nav-tab active" data-page="agenda">📅 Agenda</div>
+    <div class="nav-tab" data-page="servicios">✂ Mis Servicios</div>
+    <div class="nav-tab" data-page="reportes">📊 Reportes</div>
+    <div class="nav-tab" data-page="adelantos">💸 Adelantos</div>
+  </div>
+
+  <div id="content">
+
+    <!-- ══ AGENDA ══ -->
+    <div class="page active" id="page-agenda">
+      <div class="section-header">
+        <div>
+          <div class="section-title">AGENDA</div>
+          <div class="section-sub" id="agendaSubtitle">Mis turnos</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap" class="no-print">
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-sm" id="btnVistaDia" onclick="setVistaAgenda('dia')">Día</button>
+            <button class="btn btn-outline btn-sm" id="btnVistaSemana" onclick="setVistaAgenda('semana')">Semana</button>
+          </div>
+          <div class="agenda-nav">
+            <button class="btn btn-ghost btn-sm" onclick="navAgenda(-1)">◀</button>
+            <div class="agenda-date-label" id="agendaDateLabel"></div>
+            <button class="btn btn-ghost btn-sm" onclick="navAgenda(1)">▶</button>
+            <button class="btn btn-outline btn-sm" onclick="goHoy()">Hoy</button>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="window.print()">🖨</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div id="agendaContent" style="overflow-x:auto"></div>
+      </div>
+    </div>
+
+    <!-- ══ SERVICIOS ══ -->
+    <div class="page" id="page-servicios">
+      <div class="section-header">
+        <div>
+          <div class="section-title">MIS SERVICIOS</div>
+          <div class="section-sub">Servicios realizados · Monto = tu comisión</div>
+        </div>
+        <div style="display:flex;gap:8px" class="no-print">
+          <input type="date" class="form-control" id="servFechaFiltro" style="width:160px" onchange="renderServicios()">
+          <button class="btn btn-outline btn-sm" onclick="window.print()">🖨</button>
+        </div>
+      </div>
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="stat-card"><div class="stat-label">Comisión Hoy</div><div class="stat-value" id="srvComHoy">Gs. 0</div><div class="stat-icon">💈</div></div>
+        <div class="stat-card"><div class="stat-label">Servicios Hoy</div><div class="stat-value" id="srvCntHoy">0</div><div class="stat-icon">✂</div></div>
+        <div class="stat-card"><div class="stat-label">Comisión Mes</div><div class="stat-value" id="srvComMes">Gs. 0</div><div class="stat-icon">📅</div></div>
+        <div class="stat-card"><div class="stat-label">Servicios Mes</div><div class="stat-value" id="srvCntMes">0</div><div class="stat-icon">📋</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Detalle de Cobros</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicios</th><th>Productos</th><th>Facturado</th><th>Tu Comisión</th></tr></thead>
+            <tbody id="serviciosTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTES ══ -->
+    <div class="page" id="page-reportes">
+      <div class="section-header">
+        <div><div class="section-title">REPORTES</div><div class="section-sub">Ingresos y egresos</div></div>
+        <button class="btn btn-outline btn-sm no-print" onclick="window.print()">🖨 Imprimir</button>
+      </div>
+      <div class="period-tabs no-print">
+        <div class="period-tab active" onclick="setPeriodo('dia',this)">Hoy</div>
+        <div class="period-tab" onclick="setPeriodo('semana',this)">Esta Semana</div>
+        <div class="period-tab" onclick="setPeriodo('mes',this)">Este Mes</div>
+        <div class="period-tab" onclick="setPeriodo('semestre',this)">Semestre</div>
+      </div>
+      <div id="reportePeriodoLabel" style="font-family:var(--font-cond);font-size:.85rem;color:var(--text-muted);margin-bottom:16px"></div>
+
+      <!-- Resumen -->
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="stat-card"><div class="stat-label">Comisiones (servicios)</div><div class="stat-value" id="rpComServ">Gs. 0</div><div class="stat-icon">💈</div></div>
+        <div class="stat-card"><div class="stat-label">Comisiones (productos)</div><div class="stat-value" id="rpComProd">Gs. 0</div><div class="stat-icon">📦</div></div>
+        <div class="stat-card"><div class="stat-label">Egresos (consumos)</div><div class="stat-value" id="rpEgresos" style="color:#e74c3c">Gs. 0</div><div class="stat-icon">🧴</div></div>
+        <div class="stat-card"><div class="stat-label">Adelantos descontados</div><div class="stat-value" id="rpAdelantos" style="color:#e74c3c">Gs. 0</div><div class="stat-icon">💸</div></div>
+      </div>
+      <div class="stat-card" style="margin-bottom:20px;padding:20px">
+        <div class="stat-label">NETO A COBRAR</div>
+        <div class="stat-value" id="rpNeto" style="font-size:2.4rem">Gs. 0</div>
+        <div class="stat-sub">(comisiones − egresos − adelantos)</div>
+      </div>
+
+      <!-- Detalle servicios -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">✂ Servicios Realizados</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Fecha</th><th>Servicio</th><th>Facturado</th><th>Tu Comisión</th></tr></thead>
+          <tbody id="rpServTbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Detalle productos vendidos -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">📦 Productos Vendidos</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Fecha</th><th>Producto</th><th>Precio venta</th><th>Tu Comisión</th></tr></thead>
+          <tbody id="rpProdTbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Egresos/consumos -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">🧴 Egresos / Consumos de Productos</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Fecha</th><th>Producto</th><th>Cantidad</th><th>Monto</th></tr></thead>
+          <tbody id="rpEgresosTbody"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Adelantos -->
+      <div class="card">
+        <div class="card-title">💸 Adelantos Descontados</div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Fecha aprobación</th><th>Monto</th><th>Nota</th></tr></thead>
+          <tbody id="rpAdelantosTbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ADELANTOS ══ -->
+    <div class="page" id="page-adelantos">
+      <div class="section-header">
+        <div><div class="section-title">ADELANTOS</div><div class="section-sub">Solicitudes y estado</div></div>
+        <button class="btn btn-gold no-print" onclick="openModal('modalSolicitarAdelanto')">＋ Solicitar Adelanto</button>
+      </div>
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="stat-card"><div class="stat-label">Pendiente de aprobación</div><div class="stat-value" id="adelPendiente">Gs. 0</div><div class="stat-icon">⏳</div></div>
+        <div class="stat-card"><div class="stat-label">Descontado este mes</div><div class="stat-value" id="adelMes" style="color:#e74c3c">Gs. 0</div><div class="stat-icon">💸</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Historial de Solicitudes</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha solicitud</th><th>Monto solicitado</th><th>Monto aprobado</th><th>Estado</th><th>Nota admin</th></tr></thead>
+            <tbody id="adelantosTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<div id="toastContainer"></div>
+
+<!-- MODAL SOLICITAR ADELANTO -->
+<div class="modal-overlay" id="modalSolicitarAdelanto" onclick="closeModalOut(event,'modalSolicitarAdelanto')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💸 Solicitar Adelanto</div>
+      <button class="modal-close" onclick="closeModal('modalSolicitarAdelanto')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:14px">Tu solicitud será enviada al administrador para su aprobación. El monto aprobado se descontará de tu liquidación mensual.</div>
+      <div class="form-group">
+        <label class="form-label">Monto solicitado (Gs.) *</label>
+        <input type="number" class="form-control" id="adelMontoSolicitud" placeholder="Ej: 200000" min="1000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Motivo / Nota</label>
+        <input type="text" class="form-control" id="adelNotaSolicitud" placeholder="Opcional...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalSolicitarAdelanto')">Cancelar</button>
+      <button class="btn btn-gold" onclick="solicitarAdelanto()">Enviar Solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE TURNO -->
+<div class="modal-overlay" id="modalDetalleTurno" onclick="closeModalOut(event,'modalDetalleTurno')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📅 Detalle del Turno</div>
+      <button class="modal-close" onclick="closeModal('modalDetalleTurno')">✕</button>
+    </div>
+    <div class="modal-body" id="detalleTurnoContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalDetalleTurno')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONFIGURACIÓN SUPABASE — reemplazar con tus valores reales
+// ══════════════════════════════════════════════════════════════
+const SUPA_URL='https://TU_PROJECT_ID.supabase.co';
+const SUPA_KEY='TU_ANON_KEY';
+
+const STORE_TABLE={
+  barberos:'barberos',clientes:'clientes',servicios:'servicios',productos:'productos',
+  turnos:'turnos',cobros:'cobros',usuarios:'usuarios',historial:'historial',
+  arqueos:'arqueos',barberoUsers:'barbero_users',adelantos:'adelantos',
+  egresos:'egresos',giftcards:'giftcards',categoriasServ:'categorias_serv',categoriasProd:'categorias_prod',
+};
+const FIELD_TO_DB={
+  barberoId:'barbero_id',clienteId:'cliente_id',productoId:'producto_id',
+  fechaIngreso:'fecha_ingreso',ultimoAcceso:'ultimo_acceso',
+  metodoPago:'metodo_pago',ultimoUso:'ultimo_uso',
+  montoSolicitado:'monto_solicitado',montoAprobado:'monto_aprobado',
+  fechaSolicitud:'fecha_solicitud',notaSolicitud:'nota_solicitud',
+  notaAdmin:'nota_admin',fechaAprobacion:'fecha_aprobacion',
+  barberoNombre:'barbero_nombre',clienteNombre:'cliente_nombre',
+  registradoPor:'registrado_por',giftcardId:'giftcard_id',
+};
+const FIELD_FROM_DB=Object.fromEntries(Object.entries(FIELD_TO_DB).map(([k,v])=>[v,k]));
+const SUPA_COLS={
+  cobros:new Set(['id','cliente_id','barbero_id','fecha','hora','local','items','pagos','total','factura','giftcard_id','registrado_por','created_at']),
+  barberos:new Set(['id','nombre','apellido','fecha_ingreso','local','comision','email','activo','created_at','updated_at']),
+  barbero_users:new Set(['id','barbero_id','login','pin','activo','ultimo_acceso','created_at']),
+  clientes:new Set(['id','nombre','apellido','documento','celular','email','notas','created_at','updated_at']),
+  servicios:new Set(['id','nombre','precio','duracion','categoria','descripcion','activo','created_at','updated_at']),
+  productos:new Set(['id','nombre','precio','stock','categoria','descripcion','activo','created_at','updated_at']),
+  turnos:new Set(['id','cliente_id','cliente_nombre','barbero_id','fecha','hora','local','servicios','notas','estado','created_at','updated_at']),
+  usuarios:new Set(['id','login','password','nombre','apellido','email','rol','estado','acceso','ultimo_acceso','created_at','updated_at']),
+  historial:new Set(['id','usuario','nombre','rol','accion','fecha','hora','ts']),
+  arqueos:new Set(['id','fecha','local','turno','cajero','detalle','total','nota','created_at']),
+  adelantos:new Set(['id','barbero_id','barbero_nombre','monto_solicitado','monto_aprobado','estado','fecha_solicitud','nota_solicitud','nota_admin','fecha_aprobacion','ts']),
+  egresos:new Set(['id','barbero_id','barbero_nombre','producto_id','producto','cantidad','monto','nota','registrado_por','fecha','created_at']),
+  giftcards:new Set(['id','codigo','cliente_id','valor','saldo','metodo_pago','nota','estado','fecha','ultimo_uso','created_at']),
+  categorias_serv:new Set(['id','nombre','created_at']),
+  categorias_prod:new Set(['id','nombre','created_at']),
+};
+function toDbObj(obj,table){const allowed=table?SUPA_COLS[table]:null;const r={};for(const [k,v] of Object.entries(obj)){const dk=FIELD_TO_DB[k]||k;if(allowed&&!allowed.has(dk))continue;r[dk]=(v!==undefined&&v!==null)?v:null;}return r;}
+function fromDbObj(obj){if(!obj)return null;const r={};for(const [k,v] of Object.entries(obj)){const ak=FIELD_FROM_DB[k]||k;r[ak]=v;}if(r.id!==undefined)r.id=Number(r.id);return r;}
+
+// Conectividad
+let _online=navigator.onLine;
+window.addEventListener('online',()=>{_online=true;syncPending();});
+window.addEventListener('offline',()=>{_online=false;});
+
+// Cola offline
+const PENDING_KEY='tajos_portal_pending';
+function getPending(){try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');}catch{return[];}}
+function savePending(ops){localStorage.setItem(PENDING_KEY,JSON.stringify(ops));}
+function addPending(op){const ops=getPending();ops.push(op);savePending(ops);}
+async function syncPending(){
+  const ops=getPending();if(!ops.length||!_online)return;
+  const remaining=[];
+  for(const op of ops){
+    try{
+      const tbl=STORE_TABLE[op.store]||op.store;
+      if(op.type==='insert'){const body=toDbObj(op.data,tbl);delete body.id;await supaFetch('POST',tbl,null,body);}
+      else if(op.type==='upsert'){const body=toDbObj(op.data,tbl);delete body.id;await supaFetch('PATCH',tbl,`id=eq.${op.data.id}`,body);}
+      else if(op.type==='delete'){await supaFetch('DELETE',tbl,`id=eq.${op.id}`);}
+    }catch(e){remaining.push(op);}
+  }
+  savePending(remaining);
+}
+
+// Supabase REST helper
+async function supaFetch(method,table,query,body,extraHeaders={}){
+  const url=`${SUPA_URL}/rest/v1/${table}${query?'?'+query:''}`;
+  const headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation',...extraHeaders};
+  const res=await fetch(url,{method,headers,body:body?JSON.stringify(body):undefined});
+  if(!res.ok){const err=await res.text();throw new Error(`Supabase ${method} ${table}: ${res.status} ${err}`);}
+  if(res.status===204)return null;
+  return res.json();
+}
+
+// IndexedDB (cache local / fallback offline)
+let db;
+const DB_NAME='TajosOS',DB_VER=4;
+function initDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB_NAME,DB_VER);
+    r.onupgradeneeded=e=>{
+      const d=e.target.result;
+      ['barberos','clientes','servicios','productos','turnos','cobros','usuarios','historial','arqueos',
+       'barberoUsers','adelantos','egresos','giftcards','categoriasServ','categoriasProd']
+        .forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true});});
+    };
+    r.onsuccess=e=>{db=e.target.result;res(db);};
+    r.onerror=e=>rej(e.target.error);
+  });
+}
+const _idbAll=s=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
+const _idbGet=(s,id)=>new Promise((res,rej)=>{const r=db.transaction(s,'readonly').objectStore(s).get(Number(id));r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
+const _idbAdd=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).add(d);r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
+const _idbPut=(s,d)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).put(d);r.onsuccess=()=>res(r.result);r.onerror=e=>rej(e);});
+const _idbDel=(s,id)=>new Promise((res,rej)=>{const r=db.transaction(s,'readwrite').objectStore(s).delete(Number(id));r.onsuccess=()=>res();r.onerror=e=>rej(e);});
+async function _idbReplaceAll(store,rows){
+  const existing=await _idbAll(store);
+  for(const item of existing)await _idbDel(store,item.id);
+  for(const item of rows){const copy={...item};if(!copy.id)delete copy.id;await _idbAdd(store,copy);}
+}
+
+// Capa hibrida publica
+async function dbAll(store){
+  const tbl=STORE_TABLE[store]||store;
+  if(_online){try{const rows=await supaFetch('GET',tbl,'select=*&order=id.asc');const mapped=(rows||[]).map(fromDbObj);_idbReplaceAll(store,mapped).catch(()=>{});return mapped;}catch(e){console.warn('dbAll fallback:',e);}}
+  return _idbAll(store);
+}
+async function dbGet(store,id){
+  const tbl=STORE_TABLE[store]||store;
+  if(_online){try{const rows=await supaFetch('GET',tbl,`id=eq.${id}&select=*`);if(rows&&rows.length){const item=fromDbObj(rows[0]);_idbPut(store,item).catch(()=>{});return item;}}catch(e){console.warn('dbGet fallback:',e);}}
+  return _idbGet(store,Number(id));
+}
+async function dbAdd(store,data){
+  const tbl=STORE_TABLE[store]||store;
+  const body=toDbObj({...data},tbl);delete body.id;
+  if(_online){try{const rows=await supaFetch('POST',tbl,null,body);if(rows&&rows.length){const saved=fromDbObj(rows[0]);_idbAdd(store,saved).catch(()=>{});return saved.id;}}catch(e){console.warn('dbAdd fallback:',e);}}
+  const localId=await _idbAdd(store,{...data});addPending({type:'insert',store,data:{...data,id:localId}});return localId;
+}
+async function dbPut(store,data){
+  const tbl=STORE_TABLE[store]||store;
+  const body=toDbObj({...data},tbl);delete body.id;
+  if(_online){try{await supaFetch('PATCH',tbl,`id=eq.${data.id}`,body);_idbPut(store,data).catch(()=>{});return;}catch(e){console.warn('dbPut fallback:',e);}}
+  await _idbPut(store,data);addPending({type:'upsert',store,data});
+}
+async function dbDel(store,id){
+  const tbl=STORE_TABLE[store]||store;
+  if(_online){try{await supaFetch('DELETE',tbl,`id=eq.${id}`);_idbDel(store,id).catch(()=>{});return;}catch(e){console.warn('dbDel fallback:',e);}}
+  await _idbDel(store,id);addPending({type:'delete',store,id});
+}
+
+// ══ STATE ══
+const ST={
+  barberoUser:null,  // barberoUser record
+  barbero:null,      // barbero record (vinculado)
+  agendaFecha:new Date(),
+  agendaVista:'dia', // 'dia' | 'semana'
+  reportePeriodo:'dia'
+};
+
+// ══ HELPERS ══
+const fmt=n=>'Gs. '+(n||0).toLocaleString('es-PY',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtD=d=>{if(!d)return '—';return new Date(d+'T00:00:00').toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric'});};
+const toDS=d=>d.toISOString().split('T')[0];
+const hoy=()=>toDS(new Date());
+const ahora=()=>{const n=new Date();return toDS(n)+' '+n.toTimeString().slice(0,5);};
+
+function getLunesDeSemana(d){
+  const dt=new Date(d);const day=dt.getDay();const diff=dt.getDate()-(day===0?6:day-1);
+  dt.setDate(diff);return dt;
+}
+function getDiasSemana(d){
+  const lunes=getLunesDeSemana(d);
+  return Array.from({length:7},(_,i)=>{const dt=new Date(lunes);dt.setDate(lunes.getDate()+i);return dt;});
+}
+
+function getPeriodoRange(periodo){
+  const td=hoy();
+  if(periodo==='dia')return{desde:td,hasta:td,label:'Hoy — '+fmtD(td)};
+  if(periodo==='semana'){
+    const dias=getDiasSemana(new Date());
+    const desde=toDS(dias[0]);const hasta=toDS(dias[6]);
+    return{desde,hasta,label:`Semana — ${fmtD(desde)} al ${fmtD(hasta)}`};
+  }
+  if(periodo==='mes'){
+    const desde=td.slice(0,7)+'-01';
+    return{desde,hasta:td,label:`Este mes — ${fmtD(desde)} al ${fmtD(td)}`};
+  }
+  if(periodo==='semestre'){
+    const dt=new Date();dt.setMonth(dt.getMonth()-5);dt.setDate(1);
+    const desde=toDS(dt);
+    return{desde,hasta:td,label:`Semestre — ${fmtD(desde)} al ${fmtD(td)}`};
+  }
+  return{desde:td,hasta:td,label:'Hoy'};
+}
+
+// ══ CLOCK ══
+function updClock(){
+  const n=new Date();
+  const c=document.getElementById('topbarClock');const d=document.getElementById('topbarDate');
+  if(c)c.textContent=n.toLocaleTimeString('es-PY',{hour:'2-digit',minute:'2-digit'});
+  if(d)d.textContent=n.toLocaleDateString('es-PY',{weekday:'short',day:'numeric',month:'short'});
+}
+setInterval(updClock,1000);updClock();
+
+// ══ AUTH ══
+async function doLogin(){
+  const login=document.getElementById('loginUser').value.trim().toLowerCase();
+  const pin=document.getElementById('loginPin').value;
+  const errEl=document.getElementById('loginError');
+  const btn=document.getElementById('btnLoginPortal');
+  if(!login||!pin){errEl.textContent='❌ Ingresa tu usuario y PIN';errEl.classList.add('show');return;}
+  btn.textContent='Verificando...';btn.disabled=true;
+  errEl.classList.remove('show');
+  try{
+    const bUsers=await dbAll('barberoUsers');
+    const bu=bUsers.find(u=>u.login===login&&u.pin===pin&&u.activo!==false);
+    if(!bu){
+      errEl.textContent='❌ Usuario o PIN incorrecto';
+      errEl.classList.add('show');
+      btn.textContent='Ingresar';btn.disabled=false;return;
+    }
+    const bId=bu.barberoId||bu.barbero_id;
+    const barbero=await dbGet('barberos',bId);
+    if(!barbero){
+      errEl.textContent='❌ No se encontro el perfil de barbero. Contacta al administrador.';
+      errEl.classList.add('show');
+      btn.textContent='Ingresar';btn.disabled=false;return;
+    }
+    ST.barberoUser=bu;ST.barbero=barbero;
+    bu.ultimoAcceso=ahora();await dbPut('barberoUsers',bu);
+    showApp();
+  }catch(e){
+    console.error('Login error:',e);
+    errEl.textContent='❌ Error de conexion. Verifica tu internet e intenta de nuevo.';
+    errEl.classList.add('show');
+  }finally{btn.textContent='Ingresar';btn.disabled=false;}
+}
+
+function showApp(){
+  sessionStorage.setItem('tajos_bid', String(ST.barbero.id));
+  sessionStorage.setItem('tajos_buid', String(ST.barberoUser.id));
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.add('show');
+  document.getElementById('topbarUser').textContent=ST.barbero.nombre+' '+ST.barbero.apellido+' · '+
+    (ST.barbero.local==1?'Central':ST.barbero.local==2?'Superseis':'Ambas');
+  navigate('agenda');
+}
+
+function confirmLogout(){if(confirm('¿Cerrar sesión?'))logout();}
+function logout(){
+  ST.barberoUser=null;ST.barbero=null;
+  sessionStorage.removeItem('tajos_bid');
+  sessionStorage.removeItem('tajos_buid');
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPin').value='';
+}
+
+// ══ NAVIGATION ══
+document.querySelectorAll('.nav-tab[data-page]').forEach(el=>{
+  el.addEventListener('click',()=>navigate(el.dataset.page));
+});
+
+function navigate(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const pg=document.getElementById('page-'+page);if(!pg)return;
+  pg.classList.add('active');
+  const tab=document.querySelector(`.nav-tab[data-page="${page}"]`);if(tab)tab.classList.add('active');
+  if(page==='agenda')renderAgenda();
+  if(page==='servicios'){document.getElementById('servFechaFiltro').value=hoy();renderServicios();}
+  if(page==='reportes'){setPeriodo('dia',document.querySelector('.period-tab'));renderReportes();}
+  if(page==='adelantos')renderAdelantos();
+}
+
+// ══ MODALS ══
+function openModal(id){const el=document.getElementById(id);if(el)el.classList.add('show');}
+function closeModal(id){const el=document.getElementById(id);if(el)el.classList.remove('show');}
+function closeModalOut(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+
+// ══ TOAST ══
+function toast(msg,type='info'){
+  const icons={success:'✅',error:'❌',info:'⚡'};
+  const el=document.createElement('div');
+  el.className=`toast toast-${type}`;
+  el.innerHTML=`<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),300);},3200);
+}
+
+// ══ AGENDA ══
+const HORAS=[];for(let h=8;h<=20;h++){HORAS.push(String(h).padStart(2,'0')+':00');if(h<20)HORAS.push(String(h).padStart(2,'0')+':30');}
+
+function setVistaAgenda(v){
+  ST.agendaVista=v;
+  document.getElementById('btnVistaDia').className=v==='dia'?'btn btn-gold btn-sm':'btn btn-ghost btn-sm';
+  document.getElementById('btnVistaSemana').className=v==='semana'?'btn btn-gold btn-sm':'btn btn-outline btn-sm';
+  renderAgenda();
+}
+
+function navAgenda(delta){
+  const d=new Date(ST.agendaFecha);
+  if(ST.agendaVista==='dia')d.setDate(d.getDate()+delta);
+  else d.setDate(d.getDate()+(delta*7));
+  ST.agendaFecha=d;renderAgenda();
+}
+
+function goHoy(){ST.agendaFecha=new Date();renderAgenda();}
+
+async function renderAgenda(){
+  const bId=ST.barbero.id;
+  const turnos=await dbAll('turnos');
+  const clientes=await dbAll('clientes');
+  const cMap={};clientes.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+
+  if(ST.agendaVista==='dia'){
+    const fecha=toDS(ST.agendaFecha);
+    document.getElementById('agendaDateLabel').textContent=
+      ST.agendaFecha.toLocaleDateString('es-PY',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('agendaSubtitle').textContent='Vista diaria';
+    const misTurnos=turnos.filter(t=>t.barberoId===bId&&t.fecha===fecha);
+    let html='<div style="display:grid;grid-template-columns:64px 1fr;min-width:320px">';
+    HORAS.forEach(hora=>{
+      const t=misTurnos.find(t=>t.hora===hora);
+      html+=`<div class="time-label">${hora}</div>`;
+      if(t){
+        const cn=cMap[t.clienteId]||t.clienteNombre||'Sin nombre';
+        const sl=(t.servicios||[]).join(', ')||'—';
+        const badge=t.estado==='completado'?'badge-green':t.estado==='cancelado'?'badge-red':'badge-gold';
+        html+=`<div style="padding:4px 8px">
+          <div class="slot-cell slot-occupied" onclick="verTurno(${t.id})">
+            <div style="font-weight:700;margin-bottom:2px">${cn}</div>
+            <div style="font-size:.78rem;color:var(--text-muted)">${sl}</div>
+            <span class="badge ${badge}" style="font-size:.65rem;margin-top:3px">${t.estado||'pendiente'}</span>
+          </div></div>`;
+      }else{
+        html+=`<div style="padding:4px 8px"><div class="slot-cell slot-empty">sin turno</div></div>`;
+      }
+    });
+    html+='</div>';
+    document.getElementById('agendaContent').innerHTML=html;
+  } else {
+    // Vista semanal
+    const dias=getDiasSemana(ST.agendaFecha);
+    const desde=toDS(dias[0]);const hasta=toDS(dias[6]);
+    document.getElementById('agendaDateLabel').textContent=
+      `${dias[0].toLocaleDateString('es-PY',{day:'numeric',month:'short'})} — ${dias[6].toLocaleDateString('es-PY',{day:'numeric',month:'short',year:'numeric'})}`;
+    document.getElementById('agendaSubtitle').textContent='Vista semanal (Lun–Dom)';
+    const misTurnos=turnos.filter(t=>t.barberoId===bId&&t.fecha>=desde&&t.fecha<=hasta);
+    const DIAS_LABEL=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const cols=`64px repeat(7,minmax(100px,1fr))`;
+    let html=`<div style="min-width:800px">`;
+    // Header
+    html+=`<div style="display:grid;grid-template-columns:${cols};position:sticky;top:0;z-index:5;background:var(--bg-raised);border-bottom:1px solid var(--border)">`;
+    html+=`<div style="padding:10px;text-align:center;font-size:.7rem;color:var(--text-dim)">HORA</div>`;
+    dias.forEach((d,i)=>{
+      const esHoy=toDS(d)===hoy();
+      html+=`<div style="padding:8px;text-align:center;font-family:var(--font-cond);font-weight:700;font-size:.82rem;color:${esHoy?'var(--gold-light)':'var(--gold)'};${esHoy?'background:rgba(201,148,10,.08);':''}">${DIAS_LABEL[i]}<br><span style="font-size:.9rem">${d.getDate()}</span></div>`;
+    });
+    html+=`</div>`;
+    HORAS.forEach(hora=>{
+      html+=`<div style="display:grid;grid-template-columns:${cols};border-bottom:1px solid rgba(201,148,10,.05)">`;
+      html+=`<div class="time-label" style="padding:10px 6px;border-right:1px solid var(--border)">${hora}</div>`;
+      dias.forEach(d=>{
+        const fecha=toDS(d);
+        const t=misTurnos.find(t=>t.fecha===fecha&&t.hora===hora);
+        if(t){
+          const cn=cMap[t.clienteId]||t.clienteNombre||'—';
+          const badge=t.estado==='completado'?'badge-green':t.estado==='cancelado'?'badge-red':'badge-gold';
+          html+=`<div style="padding:3px 5px">
+            <div class="slot-cell slot-occupied" onclick="verTurno(${t.id})" style="font-size:.74rem">
+              <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cn}</div>
+              <span class="badge ${badge}" style="font-size:.6rem">${t.estado||'pend.'}</span>
+            </div></div>`;
+        }else{
+          html+=`<div style="padding:3px 5px"><div style="min-height:44px;border-radius:4px;background:rgba(255,255,255,.01);border:1px dashed rgba(201,148,10,.07)"></div></div>`;
+        }
+      });
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+    document.getElementById('agendaContent').innerHTML=`<div style="overflow-x:auto">${html}</div>`;
+  }
+}
+
+async function verTurno(id){
+  const t=await dbGet('turnos',id);if(!t)return;
+  const clientes=await dbAll('clientes');
+  const cMap={};clientes.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const badge=t.estado==='completado'?'badge-green':t.estado==='cancelado'?'badge-red':'badge-gold';
+  document.getElementById('detalleTurnoContent').innerHTML=`
+    <div class="grid-2" style="gap:14px;margin-bottom:14px">
+      <div><div class="form-label">Cliente</div><div style="font-weight:600">${cMap[t.clienteId]||t.clienteNombre||'—'}</div></div>
+      <div><div class="form-label">Fecha y Hora</div><div style="font-weight:600">${fmtD(t.fecha)} ${t.hora}</div></div>
+      <div><div class="form-label">Servicios</div><div>${(t.servicios||[]).join(', ')||'—'}</div></div>
+      <div><div class="form-label">Estado</div><span class="badge ${badge}">${t.estado||'pendiente'}</span></div>
+    </div>
+    ${t.notas?`<div class="alert alert-info">${t.notas}</div>`:''}`;
+  openModal('modalDetalleTurno');
+}
+// ══ SERVICIOS ══
+async function renderServicios(){
+  const bId=ST.barbero.id;
+  const pct=(ST.barbero.comision||50)/100;
+  const cobros=await dbAll('cobros');
+  const clientes=await dbAll('clientes');
+  const cMap={};clientes.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const td=hoy();
+  const fechaFiltro=document.getElementById('servFechaFiltro').value||td;
+  const misCobros=cobros.filter(c=>c.barberoId===bId);
+  const cobrosHoy=misCobros.filter(c=>c.fecha===td);
+  const cobrosMes=misCobros.filter(c=>c.fecha&&c.fecha.startsWith(td.slice(0,7)));
+  const cobrosFiltered=misCobros.filter(c=>c.fecha===fechaFiltro);
+
+  // Stats
+  const comHoy=cobrosHoy.reduce((s,c)=>s+c.total*pct,0);
+  const cntHoy=cobrosHoy.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').length,0);
+  const comMes=cobrosMes.reduce((s,c)=>s+c.total*pct,0);
+  const cntMes=cobrosMes.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').length,0);
+  document.getElementById('srvComHoy').textContent=fmt(comHoy);
+  document.getElementById('srvCntHoy').textContent=cntHoy;
+  document.getElementById('srvComMes').textContent=fmt(comMes);
+  document.getElementById('srvCntMes').textContent=cntMes;
+
+  // Tabla
+  const tbody=document.getElementById('serviciosTbody');
+  if(!cobrosFiltered.length){
+    tbody.innerHTML=`<tr><td colspan="7"><div class="empty-state"><div class="icon">✂</div><p>Sin servicios en esta fecha</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML=cobrosFiltered.sort((a,b)=>(b.hora||'')>(a.hora||'')?1:-1).map(co=>{
+    const svcs=co.items.filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—';
+    const prods=co.items.filter(i=>i.tipo==='producto').map(i=>i.nombre).join(', ')||'—';
+    const comision=co.total*pct;
+    return `<tr>
+      <td>${fmtD(co.fecha)}</td>
+      <td>${co.hora||'—'}</td>
+      <td>${cMap[co.clienteId]||'Sin registro'}</td>
+      <td>${svcs}</td>
+      <td style="font-size:.8rem;color:var(--text-muted)">${prods}</td>
+      <td style="font-family:var(--font-cond);color:var(--text-muted)">${fmt(co.total)}</td>
+      <td style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${fmt(comision)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══ REPORTES ══
+function setPeriodo(p,el){
+  ST.reportePeriodo=p;
+  document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderReportes();
+}
+
+async function renderReportes(){
+  const bId=ST.barbero.id;
+  const pct=(ST.barbero.comision||50)/100;
+  const {desde,hasta,label}=getPeriodoRange(ST.reportePeriodo);
+  document.getElementById('reportePeriodoLabel').textContent=label;
+
+  const cobros=await dbAll('cobros');
+  const egresos=await dbAll('egresos');
+  const adelantos=await dbAll('adelantos');
+
+  const misCobros=cobros.filter(c=>c.barberoId===bId&&c.fecha>=desde&&c.fecha<=hasta);
+  const misEgresos=egresos.filter(e=>e.barberoId===bId&&e.fecha>=desde&&e.fecha<=hasta);
+  const misAdelantos=adelantos.filter(a=>a.barberoId===bId&&a.estado==='aprobado'&&a.fechaAprobacion&&a.fechaAprobacion>=desde&&a.fechaAprobacion<=hasta);
+
+  // Comisiones por servicios
+  const comServ=misCobros.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').reduce((a,i)=>a+i.precio*pct,0),0);
+  // Comisiones por productos
+  const comProd=misCobros.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='producto').reduce((a,i)=>a+i.precio*pct,0),0);
+  // Egresos/consumos
+  const totalEgresos=misEgresos.reduce((s,e)=>s+(e.monto||0),0);
+  // Adelantos
+  const totalAdelantos=misAdelantos.reduce((s,a)=>s+(a.montoAprobado||0),0);
+  // Neto
+  const neto=(comServ+comProd)-totalEgresos-totalAdelantos;
+
+  document.getElementById('rpComServ').textContent=fmt(comServ);
+  document.getElementById('rpComProd').textContent=fmt(comProd);
+  document.getElementById('rpEgresos').textContent=fmt(totalEgresos);
+  document.getElementById('rpAdelantos').textContent=fmt(totalAdelantos);
+  document.getElementById('rpNeto').textContent=fmt(neto);
+  document.getElementById('rpNeto').style.color=neto>=0?'var(--gold-light)':'#e74c3c';
+
+  // Tabla servicios
+  const servRows=[];
+  misCobros.forEach(co=>{
+    co.items.filter(i=>i.tipo==='servicio').forEach(i=>{
+      servRows.push({fecha:co.fecha,nombre:i.nombre,precio:i.precio,comision:i.precio*pct});
+    });
+  });
+  document.getElementById('rpServTbody').innerHTML=servRows.length?
+    servRows.sort((a,b)=>b.fecha>a.fecha?1:-1).map(r=>`<tr>
+      <td>${fmtD(r.fecha)}</td><td>${r.nombre}</td>
+      <td style="font-family:var(--font-cond);color:var(--text-muted)">${fmt(r.precio)}</td>
+      <td style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${fmt(r.comision)}</td>
+    </tr>`).join(''):'<tr><td colspan="4"><div class="empty-state"><p>Sin servicios en este período</p></div></td></tr>';
+
+  // Tabla productos vendidos
+  const prodRows=[];
+  misCobros.forEach(co=>{
+    co.items.filter(i=>i.tipo==='producto').forEach(i=>{
+      prodRows.push({fecha:co.fecha,nombre:i.nombre,precio:i.precio,comision:i.precio*pct});
+    });
+  });
+  document.getElementById('rpProdTbody').innerHTML=prodRows.length?
+    prodRows.sort((a,b)=>b.fecha>a.fecha?1:-1).map(r=>`<tr>
+      <td>${fmtD(r.fecha)}</td><td>${r.nombre}</td>
+      <td style="font-family:var(--font-cond);color:var(--text-muted)">${fmt(r.precio)}</td>
+      <td style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${fmt(r.comision)}</td>
+    </tr>`).join(''):'<tr><td colspan="4"><div class="empty-state"><p>Sin productos vendidos</p></div></td></tr>';
+
+  // Tabla egresos
+  document.getElementById('rpEgresosTbody').innerHTML=misEgresos.length?
+    misEgresos.sort((a,b)=>b.fecha>a.fecha?1:-1).map(e=>`<tr>
+      <td>${fmtD(e.fecha)}</td><td>${e.producto}</td><td>${e.cantidad||1}</td>
+      <td style="font-family:var(--font-cond);font-weight:700;color:#e74c3c">${fmt(e.monto)}</td>
+    </tr>`).join(''):'<tr><td colspan="4"><div class="empty-state"><p>Sin egresos registrados</p></div></td></tr>';
+
+  // Tabla adelantos
+  document.getElementById('rpAdelantosTbody').innerHTML=misAdelantos.length?
+    misAdelantos.sort((a,b)=>b.fechaAprobacion>a.fechaAprobacion?1:-1).map(a=>`<tr>
+      <td>${fmtD(a.fechaAprobacion)}</td>
+      <td style="font-family:var(--font-cond);font-weight:700;color:#e74c3c">${fmt(a.montoAprobado)}</td>
+      <td style="font-size:.82rem;color:var(--text-muted)">${a.notaAdmin||'—'}</td>
+    </tr>`).join(''):'<tr><td colspan="3"><div class="empty-state"><p>Sin adelantos en este período</p></div></td></tr>';
+}
+
+// ══ ADELANTOS ══
+async function renderAdelantos(){
+  const bId=ST.barbero.id;
+  const adelantos=await dbAll('adelantos');
+  const misAdelantos=adelantos.filter(a=>a.barberoId===bId).sort((a,b)=>b.fechaSolicitud>a.fechaSolicitud?1:-1);
+  const td=hoy().slice(0,7);
+
+  const pendienteTotal=misAdelantos.filter(a=>a.estado==='pendiente').reduce((s,a)=>s+(a.montoSolicitado||0),0);
+  const mesTotal=misAdelantos.filter(a=>a.estado==='aprobado'&&a.fechaAprobacion&&a.fechaAprobacion.startsWith(td)).reduce((s,a)=>s+(a.montoAprobado||0),0);
+
+  document.getElementById('adelPendiente').textContent=fmt(pendienteTotal);
+  document.getElementById('adelMes').textContent=fmt(mesTotal);
+
+  const tbody=document.getElementById('adelantosTbody');
+  if(!misAdelantos.length){
+    tbody.innerHTML=`<tr><td colspan="5"><div class="empty-state"><div class="icon">💸</div><p>Sin solicitudes de adelanto</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML=misAdelantos.map(a=>{
+    const badgeMap={pendiente:'badge-yellow',aprobado:'badge-green',rechazado:'badge-red'};
+    const labelMap={pendiente:'⏳ Pendiente',aprobado:'✅ Aprobado',rechazado:'❌ Rechazado'};
+    return `<tr>
+      <td>${fmtD(a.fechaSolicitud)}</td>
+      <td style="font-family:var(--font-cond);font-weight:700">${fmt(a.montoSolicitado)}</td>
+      <td style="font-family:var(--font-cond);font-weight:700;color:${a.estado==='aprobado'?'#e74c3c':'var(--text-muted)'}">${a.montoAprobado?fmt(a.montoAprobado):'—'}</td>
+      <td><span class="badge ${badgeMap[a.estado]||'badge-gray'}">${labelMap[a.estado]||a.estado}</span></td>
+      <td style="font-size:.82rem;color:var(--text-muted)">${a.notaAdmin||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function solicitarAdelanto(){
+  const monto=parseFloat(document.getElementById('adelMontoSolicitud').value)||0;
+  const nota=document.getElementById('adelNotaSolicitud').value.trim();
+  if(monto<1000)return toast('Ingresa un monto válido (mínimo Gs. 1.000)','error');
+  await dbAdd('adelantos',{
+    barberoId:ST.barbero.id,
+    barberoNombre:ST.barbero.nombre+' '+ST.barbero.apellido,
+    montoSolicitado:monto,
+    montoAprobado:null,
+    estado:'pendiente',
+    fechaSolicitud:hoy(),
+    notaSolicitud:nota,
+    notaAdmin:'',
+    fechaAprobacion:null
+  });
+  toast('Solicitud enviada. El administrador la revisará.','success');
+  closeModal('modalSolicitarAdelanto');
+  document.getElementById('adelMontoSolicitud').value='';
+  document.getElementById('adelNotaSolicitud').value='';
+  renderAdelantos();
+}
+
+// ══ SEED: crear barberoUsers si no existen ══
+async function seedBarberoUsers(){
+  const bUsers=await dbAll('barberoUsers');
+  if(bUsers.length>0)return;
+  const barbs=await dbAll('barberos');
+  if(!barbs.length)return;
+  for(const b of barbs){
+    const bId=b.id;
+    const loginName=(b.nombre||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
+    if(!loginName)continue;
+    await dbAdd('barberoUsers',{barberoId:bId,login:loginName,pin:'1234',activo:true,ultimoAcceso:''});
+  }
+  if(barbs.length)toast('Accesos creados con PIN 1234. Cambialos desde la app admin.','info');
+}
+
+// ══ INIT ══
+initDB()
+  .then(async()=>{
+    await seedBarberoUsers();
+    document.getElementById('servFechaFiltro').value=hoy();
+    // Restaurar sesion si existe
+    const bid=sessionStorage.getItem('tajos_bid');
+    const buid=sessionStorage.getItem('tajos_buid');
+    if(bid&&buid){
+      try{
+        const barbero=await dbGet('barberos',bid);
+        const bUser=await dbGet('barberoUsers',buid);
+        if(barbero&&bUser){ST.barbero=barbero;ST.barberoUser=bUser;showApp();}
+      }catch(e){sessionStorage.removeItem('tajos_bid');sessionStorage.removeItem('tajos_buid');}
+    }
+  })
+  .catch(err=>{
+    console.error('DB Error:',err);
+    alert('Error al inicializar. Verifica tu conexion a internet e intenta recargar.');
+  });  
+</script>
+</body>
+</html>
