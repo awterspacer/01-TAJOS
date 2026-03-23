@@ -225,7 +225,7 @@ tbody tr:last-child td{border-bottom:none;}
       <label class="form-label">PIN</label>
       <input class="form-control" type="password" id="loginPin" placeholder="••••" maxlength="8" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btn btn-gold" style="width:100%;padding:12px;margin-top:6px" onclick="doLogin()">Ingresar</button>
+    <button id="btnLoginPortal" class="btn btn-gold" style="width:100%;padding:12px;margin-top:6px" onclick="doLogin()">Ingresar</button>
     <div style="text-align:center;margin-top:14px;font-size:.72rem;color:var(--text-dim)">TAJOS · Portal exclusivo para barberos</div>
   </div>
 </div>
@@ -608,7 +608,7 @@ async function doLogin(){
   const login=document.getElementById('loginUser').value.trim().toLowerCase();
   const pin=document.getElementById('loginPin').value;
   const errEl=document.getElementById('loginError');
-  const btn=document.querySelector('#loginScreen .btn-gold');
+  const btn=document.getElementById('btnLoginPortal');
   if(!login||!pin){errEl.textContent='❌ Ingresa tu usuario y PIN';errEl.classList.add('show');return;}
   btn.textContent='Verificando...';btn.disabled=true;
   errEl.classList.remove('show');
@@ -638,6 +638,8 @@ async function doLogin(){
 }
 
 function showApp(){
+  sessionStorage.setItem('tajos_barbero_id', ST.barbero.id);
+  sessionStorage.setItem('tajos_barbero_user_id', ST.barberoUser.id);
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('app').classList.add('show');
   document.getElementById('topbarUser').textContent=ST.barbero.nombre+' '+ST.barbero.apellido+' · '+
@@ -648,6 +650,8 @@ function showApp(){
 function confirmLogout(){if(confirm('¿Cerrar sesión?'))logout();}
 function logout(){
   ST.barberoUser=null;ST.barbero=null;
+  sessionStorage.removeItem('tajos_barbero_id');
+  sessionStorage.removeItem('tajos_barbero_user_id');
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginUser').value='';
@@ -1000,6 +1004,15 @@ initDB()
   .then(async()=>{
     await seedBarberoUsers();
     document.getElementById('servFechaFiltro').value=hoy();
+    // Restaurar sesión si existe
+    const savedBId=sessionStorage.getItem('tajos_barbero_id');
+    const savedBUId=sessionStorage.getItem('tajos_barberoUser_id');
+    if(savedBId&&savedBUId){
+      const barbero=await dbGet('barberos',savedBId);
+      const bUser=await dbGet('barberoUsers', savedBUId);
+      if(barbero&&bUser){ST.barbero=barbero;ST.barberoUser=bUser;showApp();}
+    }
+    
   })
   .catch(err=>{
     console.error('DB Error:',err);
