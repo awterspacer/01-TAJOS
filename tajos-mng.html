@@ -48,6 +48,7 @@ body{background:var(--bg-deep);color:var(--text-main);font-family:var(--font-bod
 .nav-item.active{color:var(--gold-light);background:var(--gold-glow);border-left-color:var(--gold);}
 .nav-item .icon{font-size:1.1rem;width:20px;text-align:center;flex-shrink:0;}
 .nav-item.admin-only{display:none;}
+.nav-item.cajero-only{display:flex;}
 .sidebar-user{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .2s;}
 .sidebar-user:hover{background:rgba(201,148,10,.05);}
 .user-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1rem;color:#000;flex-shrink:0;}
@@ -268,8 +269,8 @@ tbody tr:last-child td{border-bottom:none;}
   </div>
   <div class="sidebar-section-label">Principal</div>
   <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span>Dashboard</div>
-  <div class="nav-item" data-page="agenda"><span class="icon">📅</span>Agenda</div>
-  <div class="nav-item" data-page="caja"><span class="icon">💰</span>Caja &amp; Cobro</div>
+  <div class="nav-item cajero-only" data-page="agenda"><span class="icon">📅</span>Agenda</div>
+  <div class="nav-item cajero-only" data-page="caja"><span class="icon">💰</span>Caja &amp; Cobro</div>
   <div class="sidebar-section-label">Gestión</div>
   <div class="nav-item" data-page="clientes"><span class="icon">👥</span>Clientes</div>
   <div class="nav-item admin-only" data-page="barberos"><span class="icon">💈</span>Barberos</div>
@@ -303,7 +304,7 @@ tbody tr:last-child td{border-bottom:none;}
     <div class="topbar-title" id="pageTitle">Dashboard</div>
     <div class="topbar-date" id="topbarDate"></div>
     <div class="topbar-clock" id="topbarClock"></div>
-    <button class="btn btn-outline btn-sm" onclick="openModal('modalArqueo')" style="margin-left:6px">🏦 Arqueo</button>
+    <button class="btn btn-outline btn-sm cajero-only" onclick="openModal('modalArqueo')" style="margin-left:6px">🏦 Arqueo</button>
     <button class="btn btn-outline btn-sm" onclick="openModal('modalBackup')" style="margin-left:4px">💾 Backup</button>
     <button class="btn btn-danger btn-sm" onclick="logoutConfirm()">⏻</button>
   </div>
@@ -313,7 +314,7 @@ tbody tr:last-child td{border-bottom:none;}
 <div class="page active" id="page-dashboard">
   <div class="section-header">
     <div><div class="section-title">DASHBOARD</div><div class="section-sub" id="dashLocalLabel">Central · Resumen del día</div></div>
-    <button class="btn btn-gold" onclick="openModal('modalNuevoCobro')">＋ Nuevo Cobro</button>
+    <button class="btn btn-gold cajero-only" onclick="openModal('modalNuevoCobro')">＋ Nuevo Cobro</button>
   </div>
   <div class="grid-4" style="margin-bottom:20px">
     <div class="stat-card"><div class="stat-label">Ingresos Hoy</div><div class="stat-value" id="statIngresos">Gs. 0</div><div class="stat-sub" id="statIngSub">0 servicios</div><div class="stat-icon">💵</div></div>
@@ -914,15 +915,50 @@ tbody tr:last-child td{border-bottom:none;}
   </div>
 </div>
 <script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  TAJOS · Sistema de Gestión — tajos-mng.html                ║
+// ╠══════════════════════════════════════════════════════════════╣
+// ║  ÍNDICE DE SECCIONES                                        ║
+// ║  [1]  CONFIG & SUPABASE    — URLs, tablas, mapeo campos     ║
+// ║  [2]  CONECTIVIDAD         — Online/offline badge           ║
+// ║  [3]  COLA OFFLINE         — Pending ops, sync              ║
+// ║  [4]  SUPABASE FETCH       — Helper REST                    ║
+// ║  [5]  INDEXEDDB            — Cache local / fallback         ║
+// ║  [6]  CAPA HÍBRIDA         — dbAll/dbGet/dbAdd/dbPut/dbDel  ║
+// ║  [7]  STATE & CONSTANTES   — ST, HORAS, METODOS, fmt        ║
+// ║  [8]  RELOJ                — updClock                       ║
+// ║  [9]  AUTH                 — doLogin, showApp, logout       ║
+// ║  [10] NAVEGACIÓN           — navigate, sidebar, selectLocal ║
+// ║  [11] MODALES              — openModal, closeModal, toast   ║
+// ║  [12] USUARIOS             — renderUsuarios, guardarUsuario ║
+// ║  [13] HISTORIAL            — renderHistorial, limpiar       ║
+// ║  [14] CATÁLOGO             — servicios, productos, stock    ║
+// ║  [15] CLIENTES             — renderClientes, historial      ║
+// ║  [16] BARBEROS             — renderBarberos, guardar, detalles║
+// ║  [17] AGENDA               — renderAgenda, turno CRUD       ║
+// ║  [18] COBROS               — addItem, guardarCobro, caja    ║
+// ║  [19] ARQUEO               — renderArqueo, cajero/admin     ║
+// ║  [20] COMISIONES           — calcComisionCobro/Lista        ║
+// ║  [21] DASHBOARD            — refreshDash                    ║
+// ║  [22] REPORTES             — generarReporte, tabs           ║
+// ║  [23] BUSCADORES           — cacheSelect, filtrarSelect     ║
+// ║  [24] SELECTS              — populateSels                   ║
+// ║  [25] BACKUP               — exportar, importar, XML↔JSON  ║
+// ║  [26] ADELANTOS (ADMIN)    — gestionar, aprobar, rechazar   ║
+// ║  [27] MÉTODOS DE PAGO      — renderMetodosPago, guardar     ║
+// ║  [28] CATEGORÍAS           — poblar, render, guardar        ║
+// ║  [29] CONSUMOS             — guardarConsumo, render         ║
+// ║  [30] GIFTCARDS            — render, emitir, canjear        ║
+// ║  [31] CAJA INICIAL         — getTurno, mostrarSiNecesario   ║
+// ║  [32] SEED                 — seedData                       ║
+// ║  [33] INIT                 — initDB, cargarMetodos, boot    ║
+// ╚══════════════════════════════════════════════════════════════╝
+
 // ══════════════════════════════════════════════════════════════
-// CONFIGURACIÓN SUPABASE
-// Reemplazá estos valores con los de tu proyecto en:
-// Supabase → Settings → API
-// ══════════════════════════════════════════════════════════════
+// [1] CONFIG & SUPABASE
 const SUPA_URL='https://tgwhegmgchnttsmrhcfc.supabase.co';
 
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnd2hlZ21nY2hudHRzbXJoY2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODg1ODgsImV4cCI6MjA4OTQ2NDU4OH0.3g20p6yGber_j6HNB5oQqesOm_YgQ_fo9P2Yl2jGPbM';
-
 
 // ══════════════════════════════════════════════════════════════
 // MAPA: nombre de store (IndexedDB) → nombre de tabla (Supabase)
@@ -1005,7 +1041,7 @@ function fromDbObj(obj){
 }
 
 // ══════════════════════════════════════════════════════════════
-// INDICADOR DE CONECTIVIDAD
+// [2] CONECTIVIDAD
 // ══════════════════════════════════════════════════════════════
 let _online = navigator.onLine;
 window.addEventListener('online',  ()=>{ _online=true;  showConnBadge(true);  syncPending(); });
@@ -1265,6 +1301,11 @@ function showApp(){
   document.getElementById('sidebarAvatar').textContent=(u.nombre[0]||'?').toUpperCase();
   const isAdmin=u.rol==='admin';
   document.querySelectorAll('.admin-only').forEach(el=>el.style.display=isAdmin?'flex':'none');
+  // cajero-only: items visibles solo para cajeros, ocultos para admin
+  document.querySelectorAll('.cajero-only').forEach(el=>{
+    if(el.classList.contains('nav-item')){el.style.display=isAdmin?'none':'flex';}
+    else{el.style.display=isAdmin?'none':'';}
+  });
   const btnStock=document.getElementById('btnIngresoStock');
   if(btnStock)btnStock.style.display=isAdmin?'inline-flex':'none';
   // Aplicar restricción de acceso a sucursales para cajeros
@@ -2238,8 +2279,26 @@ async function refreshCaja(){
   document.getElementById('cajaCantDia').textContent=`${hoyC.length} cobros`;
   document.getElementById('cajaEfectivo').textContent=fmt(ef);
   document.getElementById('cajaDigital').textContent=fmt(dig);
-  const arqs=await dbAll('arqueos');const aq=arqs.find(a=>a.fecha===fecha&&a.local==ST.localActivo);
-  document.getElementById('cajaCajaInicial').textContent=fmt(aq?.cajaInicial||0);
+  const arqs=await dbAll('arqueos');const turno=getTurnoActual();
+  const aq=arqs.find(a=>a.fecha===fecha&&a.local==ST.localActivo&&a.turno==turno)||
+            arqs.find(a=>a.fecha===fecha&&a.local==ST.localActivo);
+  const cajaIni=aq?.cajaInicial||aq?.caja_inicial||0;
+  document.getElementById('cajaCajaInicial').textContent=fmt(cajaIni);
+  // Mostrar banner de caja inicial para cajeros
+  const isCajero=ST.user&&ST.user.rol!=='admin';
+  let bannerEl=document.getElementById('cajaBannerInicial');
+  if(isCajero&&fecha===hoy()){
+    if(!bannerEl){
+      bannerEl=document.createElement('div');bannerEl.id='cajaBannerInicial';
+      const cajaCard=document.querySelector('#page-caja .card');
+      if(cajaCard)cajaCard.parentNode.insertBefore(bannerEl,cajaCard);
+    }
+    if(cajaIni>0){
+      bannerEl.innerHTML=`<div class="alert alert-success" style="margin-bottom:12px">💵 Caja inicial del turno: <strong style="font-family:var(--font-cond);font-size:1rem">${fmt(cajaIni)}</strong> · Efectivo total disponible: <strong style="font-family:var(--font-cond);font-size:1rem">${fmt(cajaIni+ef)}</strong></div>`;
+    }else{
+      bannerEl.innerHTML=`<div class="alert alert-warning" style="margin-bottom:12px">⚠ Caja inicial no registrada. <button class="btn btn-outline btn-sm" onclick="openModal('modalArqueo')" style="margin-left:8px">Registrar ahora</button></div>`;
+    }
+  }else if(bannerEl){bannerEl.innerHTML='';}
   let fl=[...lc];
   if(fecha)fl=fl.filter(c=>c.fecha===fecha);
   if(buscar)fl=fl.filter(c=>(cMap[c.clienteId]||'').toLowerCase().includes(buscar)||(bMap[c.barberoId]||'').toLowerCase().includes(buscar));
@@ -2303,72 +2362,236 @@ async function renderArqueo(){
   const isAdmin=ST.user?.rol==='admin';
   const turno=getTurnoActual();
   const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
-  // Cobros del turno activo
   const h=cobros.filter(c=>c.fecha===td&&c.local==ST.localActivo);
   const arqs=await dbAll('arqueos');
-  // Para cajero: busca su turno. Para admin: muestra todos los turnos del día
   const aqActual=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno)||{cajaInicial:0,notas:'',turno};
   const totDia=h.reduce((s,c)=>s+c.total,0);
   const mets={};METODOS.forEach(m=>{mets[m.id]=h.reduce((s,c)=>s+c.pagos.filter(p=>p.metodo===m.id).reduce((a,p)=>a+p.monto,0),0);});
   window._aqMeta={td,h,mets,totDia,turno};
   const cajaIni=aqActual.cajaInicial||aqActual.caja_inicial||0;
   const efTotal=(mets['efectivo']||0);
+  // Egresos de efectivo del turno actual
+  const egresosEf=aqActual.egresosEfectivo||[];
+  const totalEgresosEf=egresosEf.reduce((s,e)=>s+(e.monto||0),0);
+  const efectivoEntregado=aqActual.efectivoEntregado||0;
 
-  // Panel de verificación para admin (todos los turnos del día)
-  let adminVerifPanel='';
+  // ── VISTA ADMIN: solo lectura + verificación ──
   if(isAdmin){
     const arqsDia=arqs.filter(a=>a.fecha===td&&a.local==ST.localActivo);
-    adminVerifPanel=`<div class="arqueo-box" style="margin-bottom:16px">
-      <div class="card-title" style="margin-bottom:10px">✅ Verificación de Arqueos (Admin)</div>
+    document.getElementById('arqueoContent').innerHTML=`
+      <div class="alert alert-info" style="margin-bottom:16px">📋 Vista de administrador — solo lectura. Verificá los arqueos enviados por los cajeros.</div>
+      <div class="arqueo-box">
+        <div class="card-title" style="margin-bottom:10px">📊 Resumen del día — ${h.length} cobros · ${localNombre(ST.localActivo)}</div>
+        ${METODOS.map(m=>`<div class="arqueo-row"><span>${m.icon} ${m.label}</span><span class="arqueo-total">${fmt(mets[m.id]||0)}</span></div>`).join('')}
+        <div class="arqueo-row" style="margin-top:8px"><span style="font-family:var(--font-cond);font-weight:700">TOTAL FACTURADO</span><span class="arqueo-total" style="font-size:1.4rem">${fmt(totDia)}</span></div>
+      </div>
+      <div class="card-title" style="margin:16px 0 10px">✅ Arqueos del día — Verificación</div>
       ${arqsDia.length?arqsDia.map(a=>{
         const ini=a.cajaInicial||a.caja_inicial||0;
-        const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1':'Turno 2');
+        const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1 (8–14h)':'Turno 2 (14–20h)');
         const verif=a.verificado;
-        return `<div class="arqueo-row">
-          <div><strong>${tl}</strong> · Cajero: ${a.cajero||'—'}<br>
-          <span style="font-size:.8rem;color:var(--text-muted)">Caja inicial: ${fmt(ini)} · ${a.notas||a.nota||''}</span></div>
-          <div style="display:flex;align-items:center;gap:8px">
-            ${verif
-              ?`<span class="badge badge-green">✅ Verificado por ${a.verificadoPor||a.verificado_por||'—'}</span>`
-              :`<button class="btn btn-outline btn-sm" onclick="verificarArqueo(${a.id})">Verificar</button>`}
+        const egEf=a.egresosEfectivo||[];
+        const totEgEf=egEf.reduce((s,e)=>s+(e.monto||0),0);
+        const efEnt=a.efectivoEntregado||0;
+        const cobsTurno=cobros.filter(c=>c.fecha===td&&c.local==ST.localActivo);
+        const efCobros=cobsTurno.reduce((s,c)=>s+c.pagos.filter(p=>p.metodo==='efectivo').reduce((x,p)=>x+p.monto,0),0);
+        const efEsperado=ini+efCobros-totEgEf;
+        const diferencia=efEnt-efEsperado;
+        return `<div class="arqueo-box" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="font-family:var(--font-cond);font-weight:700;font-size:1rem">${tl} · Cajero: <strong>${a.cajero||'—'}</strong></div>
+              <div style="font-size:.8rem;color:var(--text-muted);margin-top:4px">
+                Caja inicial: ${fmt(ini)} · Efectivo cobrado: ${fmt(efCobros)} · Egresos ef.: ${fmt(totEgEf)}<br>
+                Efectivo esperado: <strong>${fmt(efEsperado)}</strong> · Entregado: <strong>${fmt(efEnt)}</strong>
+                ${diferencia!==0?`<span style="color:${diferencia>0?'var(--success)':'var(--danger)'}"> · Diferencia: ${diferencia>0?'+':''}${fmt(diferencia)}</span>`:'<span style="color:var(--success)"> · ✓ Cuadrado</span>'}
+              </div>
+              ${egEf.length?`<div style="margin-top:6px;font-size:.78rem;color:var(--text-muted)">Egresos: ${egEf.map(e=>`${e.concepto} ${fmt(e.monto)}`).join(' · ')}</div>`:''}
+              ${a.notas||a.nota?`<div style="font-size:.8rem;color:var(--text-muted);margin-top:4px">Nota: ${a.notas||a.nota}</div>`:''}
+            </div>
+            <div>
+              ${verif
+                ?`<span class="badge badge-green" style="font-size:.8rem">✅ Verificado por ${a.verificadoPor||a.verificado_por||'—'}</span>`
+                :`<button class="btn btn-gold btn-sm" onclick="verificarArqueo(${a.id})">✅ Verificar Arqueo</button>`}
+            </div>
           </div>
         </div>`;
-      }).join(''):'<div style="color:var(--text-dim);font-size:.85rem">Sin arqueos registrados hoy</div>'}
-    </div>`;
+      }).join(''):`<div style="color:var(--text-dim);font-size:.85rem;padding:12px">Sin arqueos registrados hoy en esta sucursal</div>`}`;
+    // Ocultar footer guardar para admin
+    const footer=document.querySelector('#modalArqueo .modal-footer');
+    if(footer)footer.innerHTML=`<button class="btn btn-ghost" onclick="closeModal('modalArqueo')">Cerrar</button>`;
+    return;
   }
 
+  // ── VISTA CAJERO: caja inicial fija + egresos + entrega ──
+  const cajaConfirmada=aqActual.id&&cajaIni>0;
   document.getElementById('arqueoContent').innerHTML=`
-    ${adminVerifPanel}
     <div class="alert alert-warning" style="margin-bottom:14px">📍 ${localNombre(ST.localActivo)} · ${turnoLabel} · ${td}</div>
-    <div class="arqueo-box">
+
+    <!-- Caja inicial: input con botón Ingresar, fijo y visible una vez confirmado -->
+    <div class="arqueo-box" id="aqCajaIniBox">
       <div class="card-title" style="margin-bottom:10px">💵 Caja Inicial del Turno</div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <label class="form-label" style="margin:0;white-space:nowrap">Monto base:</label>
-        <input type="number" class="form-control" id="arqueoInicial" value="${cajaIni}" min="0" style="width:160px" oninput="updArqueoCalc()">
-      </div>
+      ${cajaConfirmada
+        ?`<div style="display:flex;align-items:center;gap:12px">
+            <div style="font-family:var(--font-display);font-size:1.8rem;color:var(--gold-light)">${fmt(cajaIni)}</div>
+            <span class="badge badge-green">✓ Confirmada</span>
+          </div>`
+        :`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <input type="number" class="form-control" id="arqueoInicial" value="${cajaIni}" min="0" placeholder="Monto en billetes (Gs.)" style="width:200px" oninput="updArqueoCalc()">
+            <button class="btn btn-gold" onclick="confirmarCajaInicial()">Ingresar</button>
+          </div>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-top:8px">Este monto queda fijo durante el turno y se suma al efectivo total.</div>`}
     </div>
+
+    <!-- Resumen cobros -->
     <div class="arqueo-box">
       <div class="card-title" style="margin-bottom:10px">📊 Resumen del Día — ${h.length} cobros</div>
       ${METODOS.map(m=>`<div class="arqueo-row"><span>${m.icon} ${m.label}</span><span class="arqueo-total">${fmt(mets[m.id]||0)}</span></div>`).join('')}
       <div class="arqueo-row" style="margin-top:8px"><span style="font-family:var(--font-cond);font-weight:700">TOTAL FACTURADO</span><span class="arqueo-total" style="font-size:1.4rem">${fmt(totDia)}</span></div>
     </div>
+
+    <!-- Efectivo en caja -->
     <div class="arqueo-box">
       <div class="card-title" style="margin-bottom:10px">💼 Efectivo en Caja</div>
       <div class="arqueo-row"><span>Caja inicial</span><span id="aqMostrarInicial">${fmt(cajaIni)}</span></div>
       <div class="arqueo-row"><span>Cobros en efectivo</span><span>${fmt(efTotal)}</span></div>
-      <div class="arqueo-row"><span style="font-family:var(--font-cond);font-weight:700">TOTAL EFECTIVO</span><span class="arqueo-total" id="aqTotalEf">${fmt(cajaIni+efTotal)}</span></div>
+      <div class="arqueo-row" style="color:var(--danger)"><span>Egresos de efectivo</span><span>−${fmt(totalEgresosEf)}</span></div>
+      <div class="arqueo-row"><span style="font-family:var(--font-cond);font-weight:700">TOTAL EFECTIVO EN CAJA</span><span class="arqueo-total" id="aqTotalEf">${fmt(cajaIni+efTotal-totalEgresosEf)}</span></div>
     </div>
-    <div class="form-group"><label class="form-label">Notas</label><input type="text" class="form-control" id="arqueoNotas" value="${aqActual.notas||aqActual.nota||''}" placeholder="Observaciones..."></div>`;
+
+    <!-- Egresos de efectivo -->
+    <div class="arqueo-box">
+      <div class="card-title" style="margin-bottom:10px">💸 Egresos de Efectivo</div>
+      <div id="aqEgresosList">
+        ${egresosEf.length
+          ?egresosEf.map((e,i)=>`<div class="arqueo-row">
+              <span>${e.concepto||'Sin concepto'}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="arqueo-total" style="font-size:.95rem;color:#e74c3c">−${fmt(e.monto)}</span>
+                <button class="btn btn-danger btn-sm" onclick="quitarEgresoEf(${i})">✕</button>
+              </div>
+            </div>`).join('')
+          :'<div style="color:var(--text-dim);font-size:.82rem;padding:6px 0">Sin egresos registrados</div>'}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <input type="text" class="form-control" id="aqEgresoConcepto" placeholder="Concepto (ej: Compra insumos)" style="flex:1;min-width:160px">
+        <input type="number" class="form-control" id="aqEgresoMonto" placeholder="Monto (Gs.)" style="width:140px" min="0">
+        <button class="btn btn-outline" onclick="agregarEgresoEf()">＋ Registrar Egreso</button>
+      </div>
+    </div>
+
+    <!-- Efectivo entregado al cierre -->
+    <div class="arqueo-box">
+      <div class="card-title" style="margin-bottom:10px">🏦 Efectivo Entregado al Cierre</div>
+      <div class="arqueo-row"><span>Esperado en caja</span><span class="arqueo-total" id="aqEfEsperado">${fmt(cajaIni+efTotal-totalEgresosEf)}</span></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+        <label style="font-family:var(--font-cond);font-size:.78rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">Monto entregado:</label>
+        <input type="number" class="form-control" id="aqEfEntregado" value="${efectivoEntregado||''}" placeholder="Gs." min="0" style="width:160px" oninput="updDiferenciaEntrega()">
+        <span id="aqDiferenciaLabel" style="font-family:var(--font-cond);font-size:.85rem"></span>
+      </div>
+    </div>
+
+    <div class="form-group"><label class="form-label">Notas / Observaciones</label>
+      <input type="text" class="form-control" id="arqueoNotas" value="${aqActual.notas||aqActual.nota||''}" placeholder="Observaciones del turno..."></div>`;
+
+  // Footer cajero
+  const footer=document.querySelector('#modalArqueo .modal-footer');
+  if(footer)footer.innerHTML=`<button class="btn btn-ghost" onclick="closeModal('modalArqueo')">Cerrar</button><button class="btn btn-gold" onclick="guardarArqueo()">Guardar &amp; Enviar Cierre</button>`;
+
+  updDiferenciaEntrega();
 }
 function updArqueoCalc(){
-  const ini=parseFloat(document.getElementById('arqueoInicial').value)||0;
+  const ini=parseFloat(document.getElementById('arqueoInicial')?.value)||0;
   const ef=window._aqMeta?.mets?.efectivo||0;
-  document.getElementById('aqMostrarInicial').textContent=fmt(ini);
-  document.getElementById('aqTotalEf').textContent=fmt(ini+ef);
+  const egEf=window._aqMeta?._egresosEf||[];
+  const totEg=egEf.reduce((s,e)=>s+(e.monto||0),0);
+  const el=document.getElementById('aqMostrarInicial');if(el)el.textContent=fmt(ini);
+  const tel=document.getElementById('aqTotalEf');if(tel)tel.textContent=fmt(ini+ef-totEg);
+  updDiferenciaEntrega();
 }
+
+// Confirmar caja inicial del turno (cajero) — queda fija en DB
+async function confirmarCajaInicial(){
+  const monto=parseFloat(document.getElementById('arqueoInicial')?.value)||0;
+  if(monto<0)return toast('El monto no puede ser negativo','error');
+  const td=hoy();const turno=getTurnoActual();
+  const turnoLabel=turno===1?'Turno 1':'Turno 2';
+  const arqs=await dbAll('arqueos');
+  const ex=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
+  const data={fecha:td,local:ST.localActivo,turno,turnoLabel,cajaInicial:monto,notas:'',cajero:ST.user?.login,verificado:false,egresosEfectivo:[],efectivoEntregado:0};
+  if(ex){data.id=ex.id;await dbPut('arqueos',data);}
+  else{await dbAdd('arqueos',data);}
+  localStorage.setItem(getCajaKey(),'done');
+  await logAct(`Registró caja inicial: ${fmt(monto)} · ${turnoLabel}`);
+  toast(`Caja inicial confirmada: ${fmt(monto)}`,'success');
+  renderArqueo();refreshCaja();
+}
+
+// Agregar egreso de efectivo al arqueo del turno
+async function agregarEgresoEf(){
+  const concepto=document.getElementById('aqEgresoConcepto')?.value.trim();
+  const monto=parseFloat(document.getElementById('aqEgresoMonto')?.value)||0;
+  if(!concepto)return toast('Ingresá un concepto para el egreso','error');
+  if(monto<=0)return toast('El monto debe ser mayor a 0','error');
+  const td=hoy();const turno=getTurnoActual();
+  const turnoLabel=turno===1?'Turno 1':'Turno 2';
+  const arqs=await dbAll('arqueos');
+  let aq=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
+  if(!aq){
+    // Crear arqueo vacío si no existe
+    const newId=await dbAdd('arqueos',{fecha:td,local:ST.localActivo,turno,turnoLabel,cajaInicial:0,notas:'',cajero:ST.user?.login,verificado:false,egresosEfectivo:[{concepto,monto,hora:new Date().toTimeString().slice(0,5)}],efectivoEntregado:0});
+    toast(`Egreso registrado: ${fmt(monto)}`,'success');
+  }else{
+    const lista=(aq.egresosEfectivo||[]);
+    lista.push({concepto,monto,hora:new Date().toTimeString().slice(0,5)});
+    aq.egresosEfectivo=lista;
+    await dbPut('arqueos',aq);
+    toast(`Egreso registrado: ${fmt(monto)}`,'success');
+  }
+  await logAct(`Registró egreso de efectivo: ${concepto} · ${fmt(monto)}`);
+  const ec=document.getElementById('aqEgresoConcepto');if(ec)ec.value='';
+  const em=document.getElementById('aqEgresoMonto');if(em)em.value='';
+  renderArqueo();
+}
+
+// Quitar egreso de efectivo por índice
+async function quitarEgresoEf(idx){
+  const td=hoy();const turno=getTurnoActual();
+  const arqs=await dbAll('arqueos');
+  const aq=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
+  if(!aq)return;
+  const lista=(aq.egresosEfectivo||[]);
+  lista.splice(idx,1);
+  aq.egresosEfectivo=lista;
+  await dbPut('arqueos',aq);
+  renderArqueo();
+}
+
+// Actualizar etiqueta de diferencia en entrega de efectivo
+function updDiferenciaEntrega(){
+  const ini=parseFloat(document.getElementById('arqueoInicial')?.value)||
+            parseFloat(document.getElementById('aqMostrarInicial')?.textContent?.replace(/\D/g,''))||0;
+  const ef=window._aqMeta?.mets?.efectivo||0;
+  const egEf=window._aqMeta?._egresosEf||[];
+  const totEg=egEf.reduce((s,e)=>s+(e.monto||0),0);
+  const esperado=ini+ef-totEg;
+  const entregado=parseFloat(document.getElementById('aqEfEntregado')?.value)||0;
+  const diff=entregado-esperado;
+  const lbl=document.getElementById('aqDiferenciaLabel');
+  const esp=document.getElementById('aqEfEsperado');
+  if(esp)esp.textContent=fmt(esperado);
+  if(lbl){
+    if(!entregado){lbl.textContent='';return;}
+    lbl.textContent=diff===0?'✅ Cuadrado':diff>0?`▲ Sobrante: ${fmt(diff)}`:`▼ Faltante: ${fmt(Math.abs(diff))}`;
+    lbl.style.color=diff===0?'var(--success)':diff>0?'#f1c40f':'var(--danger)';
+  }
+}
+
 async function guardarArqueo(){
-  const td=hoy();const ini=parseFloat(document.getElementById('arqueoInicial').value)||0;
-  const notas=document.getElementById('arqueoNotas').value.trim();
+  const td=hoy();
+  const ini=parseFloat(document.getElementById('arqueoInicial')?.value)||0;
+  const notas=document.getElementById('arqueoNotas')?.value.trim()||'';
+  const efectivoEntregado=parseFloat(document.getElementById('aqEfEntregado')?.value)||0;
   const turno=getTurnoActual();
   const turnoLabel=turno===1?'Turno 1':'Turno 2';
   const cobros=await dbAll('cobros');
@@ -2377,11 +2600,13 @@ async function guardarArqueo(){
   const detalle={};METODOS.forEach(m=>{detalle[m.id]=h.reduce((s,co)=>s+co.pagos.filter(p=>p.metodo===m.id).reduce((a,p)=>a+p.monto,0),0);});
   const arqs=await dbAll('arqueos');
   const ex=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
-  const data={fecha:td,local:ST.localActivo,turno,turnoLabel,cajaInicial:ini,total,detalle,notas,cajero:ST.user?.login,verificado:false};
+  const egresosEfectivo=ex?.egresosEfectivo||[];
+  const data={fecha:td,local:ST.localActivo,turno,turnoLabel,cajaInicial:ini,total,detalle,notas,cajero:ST.user?.login,verificado:false,egresosEfectivo,efectivoEntregado};
   if(ex){data.id=ex.id;await dbPut('arqueos',data);}else{await dbAdd('arqueos',data);}
   localStorage.setItem(getCajaKey(),'done');
-  await logAct(`Guardó arqueo · ${turnoLabel} · ${localNombre(ST.localActivo)} · Caja: ${fmt(ini)}`);
-  toast('Arqueo guardado','success');closeModal('modalArqueo');refreshCaja();
+  await logAct(`Guardó cierre de caja · ${turnoLabel} · ${localNombre(ST.localActivo)} · Caja inicial: ${fmt(ini)} · Entregado: ${fmt(efectivoEntregado)}`);
+  toast('Cierre de caja guardado y enviado al administrador','success');
+  closeModal('modalArqueo');refreshCaja();
 }
 async function verificarArqueo(id){
   const a=await dbGet('arqueos',id);if(!a)return;
