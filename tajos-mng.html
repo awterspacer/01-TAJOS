@@ -351,20 +351,29 @@ tbody tr:last-child td{border-bottom:none;}
 <!-- CAJA -->
 <div class="page" id="page-caja">
   <div class="section-header">
-    <div><div class="section-title">CAJA</div><div class="section-sub" id="cajaLocalLabel">Central</div></div>
+    <div><div class="section-title">CAJA &amp; COBRO</div><div class="section-sub" id="cajaLocalLabel">Central</div></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" onclick="openModal('modalArqueo')">🏦 Arqueo</button>
+      <button class="btn btn-outline cajero-only" onclick="openModal('modalArqueo')">🏦 Cierre de Turno</button>
       <button class="btn btn-gold" onclick="openModal('modalNuevoCobro')">＋ Nuevo Cobro</button>
     </div>
   </div>
+
+  <!-- Estado de caja del turno activo — visible solo hoy -->
+  <div id="estadoCajaBox" style="margin-bottom:20px">
+    <!-- Renderizado por refreshCaja() -->
+  </div>
+
+  <!-- Stats del día -->
   <div class="grid-4" style="margin-bottom:20px">
     <div class="stat-card"><div class="stat-label">Total del Día</div><div class="stat-value" id="cajaTotalDia">Gs. 0</div><div class="stat-sub" id="cajaCantDia">0 cobros</div><div class="stat-icon">💰</div></div>
     <div class="stat-card"><div class="stat-label">Efectivo</div><div class="stat-value" id="cajaEfectivo">Gs. 0</div><div class="stat-icon">💵</div></div>
     <div class="stat-card"><div class="stat-label">Digital</div><div class="stat-value" id="cajaDigital">Gs. 0</div><div class="stat-sub">Tarjetas + Transfer.</div><div class="stat-icon">💳</div></div>
     <div class="stat-card"><div class="stat-label">Caja Inicial</div><div class="stat-value" id="cajaCajaInicial">Gs. 0</div><div class="stat-sub">Base vueltos</div><div class="stat-icon">🏦</div></div>
   </div>
+
+  <!-- Historial financiero del día -->
   <div class="card">
-    <div class="card-title">📋 Historial de Cobros</div>
+    <div class="card-title">📋 Movimientos del Día</div>
     <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
       <div class="search-wrap" style="flex:1;min-width:180px"><span class="search-icon">🔍</span><input class="form-control" id="cajaBuscar" placeholder="Buscar cliente o barbero..." oninput="filtrarCobros()"></div>
       <input type="date" class="form-control" id="cajaFechaFiltro" style="width:160px" onchange="filtrarCobros()">
@@ -1006,6 +1015,7 @@ const STORE_TABLE = {
   usuarios:       'usuarios',
   historial:      'historial',
   arqueos:        'arqueos',
+  cajaTurnos:     'caja_turnos',
   barberoUsers:   'barbero_users',
   adelantos:      'adelantos',
   egresos:        'egresos',
@@ -1036,6 +1046,8 @@ const FIELD_TO_DB = {
   verificadoAt:'verificado_at',
   egresosEfectivo:'egresos_efectivo',
   efectivoEntregado:'efectivo_entregado',
+  // Caja turnos
+  cajaInicialConfirmada:'caja_inicial_confirmada',
 };
 const FIELD_FROM_DB = Object.fromEntries(Object.entries(FIELD_TO_DB).map(([k,v])=>[v,k]));
 
@@ -1050,6 +1062,7 @@ const SUPA_COLS={
   usuarios:new Set(['id','login','password','nombre','apellido','email','rol','estado','acceso','ultimo_acceso','created_at','updated_at']),
   historial:new Set(['id','usuario','nombre','rol','accion','fecha','hora','ts']),
   arqueos:new Set(['id','fecha','local','turno','turno_label','cajero','caja_inicial','detalle','total','nota','notas','verificado','verificado_por','verificado_at','egresos_efectivo','efectivo_entregado','cerrado','created_at']),
+  caja_turnos:new Set(['id','fecha','local','turno','turno_label','cajero','caja_inicial','caja_inicial_confirmada','egresos_efectivo','created_at','updated_at']),
   adelantos:new Set(['id','barbero_id','barbero_nombre','monto_solicitado','monto_aprobado','estado','fecha_solicitud','nota_solicitud','nota_admin','fecha_aprobacion','ts']),
   egresos:new Set(['id','barbero_id','barbero_nombre','producto_id','producto','cantidad','monto','nota','registrado_por','fecha','created_at']),
   giftcards:new Set(['id','codigo','cliente_id','valor','saldo','metodo_pago','nota','estado','fecha','ultimo_uso','created_at']),
@@ -1171,14 +1184,14 @@ async function supaFetch(method,table,query,body,extraHeaders={}){
 // INDEXEDDB (CACHÉ LOCAL / FALLBACK OFFLINE)
 // ══════════════════════════════════════════════════════════════
 let db;
-const DB_NAME='TajosOS',DB_VER=4;
+const DB_NAME='TajosOS',DB_VER=5;
 function initDB(){
   return new Promise((res,rej)=>{
     const r=indexedDB.open(DB_NAME,DB_VER);
     r.onupgradeneeded=e=>{
       const d=e.target.result;
       ['barberos','clientes','servicios','productos','turnos','cobros','usuarios','historial','arqueos',
-       'barberoUsers','adelantos','egresos','giftcards','categoriasServ','categoriasProd']
+       'cajaTurnos','barberoUsers','adelantos','egresos','giftcards','categoriasServ','categoriasProd']
         .forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id',autoIncrement:true});});
     };
     r.onsuccess=e=>{db=e.target.result;res(db);};
@@ -1332,7 +1345,7 @@ async function cargarMetodos(){
     }
   }catch(e){console.warn('cargarMetodos fallback:',e);}
 }
-const STORES=['barberos','clientes','servicios','productos','turnos','cobros','usuarios','historial','arqueos','barberoUsers','adelantos','egresos','giftcards','categoriasServ','categoriasProd'];
+const STORES=['barberos','clientes','servicios','productos','turnos','cobros','usuarios','historial','arqueos','cajaTurnos','barberoUsers','adelantos','egresos','giftcards','categoriasServ','categoriasProd'];
 const fmt=n=>'Gs. '+(n||0).toLocaleString('es-PY',{minimumFractionDigits:0,maximumFractionDigits:0});
 const fmtD=d=>{if(!d)return '';return new Date(d+'T00:00:00').toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric'});};
 const toDS=d=>d.toISOString().split('T')[0];
@@ -2354,26 +2367,35 @@ async function refreshCaja(){
   document.getElementById('cajaCantDia').textContent=`${hoyC.length} cobros`;
   document.getElementById('cajaEfectivo').textContent=fmt(ef);
   document.getElementById('cajaDigital').textContent=fmt(dig);
-  const arqs=await dbAll('arqueos');const turno=getTurnoActual();
-  const aq=arqs.find(a=>a.fecha===fecha&&a.local==ST.localActivo&&a.turno==turno)||
-            arqs.find(a=>a.fecha===fecha&&a.local==ST.localActivo);
-  const cajaIni=aq?.cajaInicial||aq?.caja_inicial||0;
+  // Leer caja inicial siempre desde caja_turnos
+  const turno=getTurnoActual();
+  const ct=await getCajaTurno(fecha,ST.localActivo,turno)||{cajaInicial:0,egresosEfectivo:[]};
+  const cajaIni=ct.cajaInicial||ct.caja_inicial||0;
+  const egresosEfCt=(ct.egresosEfectivo||[]).reduce((s,e)=>s+(e.monto||0),0);
   document.getElementById('cajaCajaInicial').textContent=fmt(cajaIni);
-  // Mostrar banner de caja inicial para cajeros
+  // Renderizar bloque de estado de caja
   const isCajero=ST.user&&ST.user.rol!=='admin';
-  let bannerEl=document.getElementById('cajaBannerInicial');
-  if(isCajero&&fecha===hoy()){
-    if(!bannerEl){
-      bannerEl=document.createElement('div');bannerEl.id='cajaBannerInicial';
-      const cajaCard=document.querySelector('#page-caja .card');
-      if(cajaCard)cajaCard.parentNode.insertBefore(bannerEl,cajaCard);
-    }
+  const estadoCajaBox=document.getElementById('estadoCajaBox');
+  if(estadoCajaBox&&fecha===hoy()){
     if(cajaIni>0){
-      bannerEl.innerHTML=`<div class="alert alert-success" style="margin-bottom:12px">💵 Caja inicial del turno: <strong style="font-family:var(--font-cond);font-size:1rem">${fmt(cajaIni)}</strong> · Efectivo total disponible: <strong style="font-family:var(--font-cond);font-size:1rem">${fmt(cajaIni+ef)}</strong></div>`;
-    }else{
-      bannerEl.innerHTML=`<div class="alert alert-warning" style="margin-bottom:12px">⚠ Caja inicial no registrada. <button class="btn btn-outline btn-sm" onclick="openModal('modalArqueo')" style="margin-left:8px">Registrar ahora</button></div>`;
-    }
-  }else if(bannerEl){bannerEl.innerHTML='';}
+      estadoCajaBox.innerHTML=`<div class="arqueo-box" style="margin-bottom:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div>
+            <div class="card-title" style="margin-bottom:8px">💵 Estado de Caja — Turno Activo</div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap">
+              <div><div class="stat-label">Caja Inicial</div><div style="font-family:var(--font-display);font-size:1.4rem;color:var(--gold-light)">${fmt(cajaIni)}</div></div>
+              <div><div class="stat-label">Efectivo Cobrado</div><div style="font-family:var(--font-display);font-size:1.4rem;color:var(--success)">${fmt(ef)}</div></div>
+              ${egresosEfCt>0?`<div><div class="stat-label">Egresos Ef.</div><div style="font-family:var(--font-display);font-size:1.4rem;color:#e74c3c">−${fmt(egresosEfCt)}</div></div>`:''}
+              <div><div class="stat-label">Total Efectivo en Caja</div><div style="font-family:var(--font-display);font-size:1.4rem;color:var(--text-main)">${fmt(cajaIni+ef-egresosEfCt)}</div></div>
+            </div>
+          </div>
+          ${isCajero?`<button class="btn btn-outline cajero-only" onclick="openModal('modalArqueo')">🏦 Cierre de Turno</button>`:''}
+        </div>
+      </div>`;
+    }else if(isCajero){
+      estadoCajaBox.innerHTML=`<div class="alert alert-warning" style="margin-bottom:0">⚠ Caja inicial no registrada para este turno. <button class="btn btn-outline btn-sm" onclick="openModal('modalArqueo')" style="margin-left:8px">Registrar ahora</button></div>`;
+    }else{estadoCajaBox.innerHTML='';}
+  }else if(estadoCajaBox){estadoCajaBox.innerHTML='';}
   let fl=[...lc];
   if(fecha)fl=fl.filter(c=>c.fecha===fecha);
   if(buscar)fl=fl.filter(c=>(cMap[String(c.clienteId||c.cliente_id||'')]||'').toLowerCase().includes(buscar)||(bMap[String(c.barberoId||c.barbero_id||'')]||'').toLowerCase().includes(buscar));
@@ -2439,16 +2461,18 @@ async function renderArqueo(){
   const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
   const h=cobros.filter(c=>c.fecha===td&&c.local==ST.localActivo);
   const arqs=await dbAll('arqueos');
-  const aqActual=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno)||{cajaInicial:0,notas:'',turno};
+  const aqActual=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno)||{notas:'',turno,cerrado:false};
+  // Leer caja inicial y egresos SIEMPRE desde caja_turnos (fuente de verdad)
+  const ct=await getCajaTurno(td,ST.localActivo,turno)||{cajaInicial:0,egresosEfectivo:[]};
+  const cajaIni=ct.cajaInicial||ct.caja_inicial||0;
+  const cajaConfirmada=ct.cajaInicialConfirmada||ct.caja_inicial_confirmada||false;
+  const egresosEf=ct.egresosEfectivo||[];
   const totDia=h.reduce((s,c)=>s+c.total,0);
   const mets={};METODOS.forEach(m=>{mets[m.id]=h.reduce((s,c)=>s+(c.pagos||[]).filter(p=>p.metodo===m.id).reduce((a,p)=>a+(parseFloat(p.monto)||0),0),0);});
-  window._aqMeta={td,h,mets,totDia,turno,_egresosEf:egresosEf,_cajaIni:cajaIni};
-  const cajaIni=aqActual.cajaInicial||aqActual.caja_inicial||0;
   const efTotal=(mets['efectivo']||0);
-  // Egresos de efectivo del turno actual
-  const egresosEf=aqActual.egresosEfectivo||[];
   const totalEgresosEf=egresosEf.reduce((s,e)=>s+(e.monto||0),0);
   const efectivoEntregado=aqActual.efectivoEntregado||0;
+  window._aqMeta={td,h,mets,totDia,turno,_egresosEf:egresosEf,_cajaIni:cajaIni};
 
   // ── VISTA ADMIN: solo lectura + verificación ──
   if(isAdmin){
@@ -2461,11 +2485,13 @@ async function renderArqueo(){
         <div class="arqueo-row" style="margin-top:8px"><span style="font-family:var(--font-cond);font-weight:700">TOTAL FACTURADO</span><span class="arqueo-total" style="font-size:1.4rem">${fmt(totDia)}</span></div>
       </div>
       <div class="card-title" style="margin:16px 0 10px">✅ Arqueos del día — Verificación</div>
-      ${arqsDia.length?arqsDia.map(a=>{
-        const ini=a.cajaInicial||a.caja_inicial||0;
+      ${arqsDia.length?await Promise.all(arqsDia.map(async a=>{
+        // Leer caja inicial y egresos desde caja_turnos (fuente de verdad)
+        const ctA=await getCajaTurno(td,a.local,a.turno)||{cajaInicial:0,egresosEfectivo:[]};
+        const ini=ctA.cajaInicial||ctA.caja_inicial||0;
         const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1 (8–14h)':'Turno 2 (14–20h)');
         const verif=a.verificado;
-        const egEf=a.egresosEfectivo||[];
+        const egEf=ctA.egresosEfectivo||[];
         const totEgEf=egEf.reduce((s,e)=>s+(e.monto||0),0);
         const efEnt=a.efectivoEntregado||0;
         const cobsTurno=cobros.filter(c=>c.fecha===td&&c.local==ST.localActivo);
@@ -2493,7 +2519,7 @@ async function renderArqueo(){
             </div>
           </div>
         </div>`;
-      }).join(''):`<div style="color:var(--text-dim);font-size:.85rem;padding:12px">Sin arqueos registrados hoy en esta sucursal</div>`}`;
+      })).then(r=>r.join('')):`<div style="color:var(--text-dim);font-size:.85rem;padding:12px">Sin arqueos registrados hoy en esta sucursal</div>`}`;
     // Ocultar footer guardar para admin
     const footer=document.querySelector('#modalArqueo .modal-footer');
     if(footer)footer.innerHTML=`<button class="btn btn-ghost" onclick="closeModal('modalArqueo')">Cerrar</button>`;
@@ -2501,7 +2527,7 @@ async function renderArqueo(){
   }
 
   // ── VISTA CAJERO: caja inicial fija + egresos + entrega ──
-  const cajaConfirmada=aqActual.id&&cajaIni>0;
+  // cajaConfirmada ya se calculó arriba desde cajaTurnos
   document.getElementById('arqueoContent').innerHTML=`
     <div class="alert alert-warning" style="margin-bottom:14px">📍 ${localNombre(ST.localActivo)} · ${turnoLabel} · ${td}</div>
 
@@ -2601,51 +2627,26 @@ function updArqueoCalc(){
 async function confirmarCajaInicial(){
   const monto=parseFloat(document.getElementById('arqueoInicial')?.value)||0;
   if(monto<0)return toast('El monto no puede ser negativo','error');
-  const td=hoy();const turno=getTurnoActual();
-  const turnoLabel=turno===1?'Turno 1':'Turno 2';
-  const arqs=await dbAll('arqueos');
-  const ex=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
-  // Preservar egresos y entrega existentes — solo actualizar cajaInicial
-  const data={
-    fecha:td,local:ST.localActivo,turno,turnoLabel,
-    cajaInicial:monto,
-    notas:ex?.notas||ex?.nota||'',
-    cajero:ex?.cajero||ST.user?.login,
-    verificado:ex?.verificado||false,
-    cerrado:ex?.cerrado||false,
-    egresosEfectivo:ex?.egresosEfectivo||[],
-    efectivoEntregado:ex?.efectivoEntregado||0,
-  };
-  if(ex){data.id=ex.id;await dbPut('arqueos',data);}
-  else{await dbAdd('arqueos',data);}
+  await saveCajaTurno({cajaInicial:monto,cajaInicialConfirmada:true});
   localStorage.setItem(getCajaKey(),'done');
+  const turnoLabel=getTurnoActual()===1?'Turno 1':'Turno 2';
   await logAct(`Registró caja inicial: ${fmt(monto)} · ${turnoLabel}`);
   toast(`Caja inicial confirmada: ${fmt(monto)}`,'success');
   renderArqueo();refreshCaja();
 }
 
-// Agregar egreso de efectivo al arqueo del turno
+// Agregar egreso de efectivo al turno activo (tabla caja_turnos)
 async function agregarEgresoEf(){
   const concepto=document.getElementById('aqEgresoConcepto')?.value.trim();
   const monto=parseFloat(document.getElementById('aqEgresoMonto')?.value)||0;
   if(!concepto)return toast('Ingresá un concepto para el egreso','error');
   if(monto<=0)return toast('El monto debe ser mayor a 0','error');
-  const td=hoy();const turno=getTurnoActual();
-  const turnoLabel=turno===1?'Turno 1':'Turno 2';
-  const arqs=await dbAll('arqueos');
-  let aq=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
-  if(!aq){
-    // Crear arqueo vacío si no existe
-    const newId=await dbAdd('arqueos',{fecha:td,local:ST.localActivo,turno,turnoLabel,cajaInicial:0,notas:'',cajero:ST.user?.login,verificado:false,cerrado:false,egresosEfectivo:[{concepto,monto,hora:new Date().toTimeString().slice(0,5)}],efectivoEntregado:0});
-    toast(`Egreso registrado: ${fmt(monto)}`,'success');
-  }else{
-    const lista=(aq.egresosEfectivo||[]);
-    lista.push({concepto,monto,hora:new Date().toTimeString().slice(0,5)});
-    aq.egresosEfectivo=lista;
-    await dbPut('arqueos',aq);
-    toast(`Egreso registrado: ${fmt(monto)}`,'success');
-  }
+  const ct=await getCajaTurno(hoy(),ST.localActivo,getTurnoActual());
+  const lista=(ct?.egresosEfectivo||[]);
+  lista.push({concepto,monto,hora:new Date().toTimeString().slice(0,5)});
+  await saveCajaTurno({egresosEfectivo:lista});
   await logAct(`Registró egreso de efectivo: ${concepto} · ${fmt(monto)}`);
+  toast(`Egreso registrado: ${fmt(monto)}`,'success');
   const ec=document.getElementById('aqEgresoConcepto');if(ec)ec.value='';
   const em=document.getElementById('aqEgresoMonto');if(em)em.value='';
   renderArqueo();
@@ -2653,14 +2654,11 @@ async function agregarEgresoEf(){
 
 // Quitar egreso de efectivo por índice
 async function quitarEgresoEf(idx){
-  const td=hoy();const turno=getTurnoActual();
-  const arqs=await dbAll('arqueos');
-  const aq=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
-  if(!aq)return;
-  const lista=(aq.egresosEfectivo||[]);
+  const ct=await getCajaTurno(hoy(),ST.localActivo,getTurnoActual());
+  if(!ct)return;
+  const lista=(ct.egresosEfectivo||[]);
   lista.splice(idx,1);
-  aq.egresosEfectivo=lista;
-  await dbPut('arqueos',aq);
+  await saveCajaTurno({egresosEfectivo:lista});
   renderArqueo();
 }
 
@@ -2691,30 +2689,23 @@ async function _persistirArqueo(cerrar){
   const td=hoy();
   const turno=getTurnoActual();
   const turnoLabel=turno===1?'Turno 1':'Turno 2';
+  // Leer caja_turnos — fuente de verdad para cajaInicial y egresos
+  const ct=await getCajaTurno(td,ST.localActivo,turno)||{cajaInicial:0,egresosEfectivo:[]};
+  const cajaInicial=ct.cajaInicial||ct.caja_inicial||0;
+  const egresosEfectivo=ct.egresosEfectivo||[];
+  // Leer arqueo existente para preservar campos de verificación
   const arqs=await dbAll('arqueos');
   const ex=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
-
-  // Caja inicial: tomar del input si está visible, sino del registro existente
-  const inputIni=document.getElementById('arqueoInicial');
-  const cajaInicial=inputIni
-    ?parseFloat(inputIni.value)||0
-    :ex?.cajaInicial||ex?.caja_inicial||window._aqMeta?._cajaIni||0;
-
   const notas=document.getElementById('arqueoNotas')?.value.trim()||ex?.notas||'';
   const efectivoEntregado=parseFloat(document.getElementById('aqEfEntregado')?.value)||ex?.efectivoEntregado||0;
-
   const cobros=await dbAll('cobros');
   const h=cobros.filter(co=>co.fecha===td&&co.local==ST.localActivo);
   const total=h.reduce((s,co)=>s+co.total,0);
   const detalle={};METODOS.forEach(m=>{detalle[m.id]=h.reduce((s,co)=>s+(co.pagos||[]).filter(p=>p.metodo===m.id).reduce((a,p)=>a+(parseFloat(p.monto)||0),0),0);});
-
-  // Preservar egresos del registro existente (pueden haber sido agregados sin cerrar)
-  const egresosEfectivo=ex?.egresosEfectivo||[];
-
   const data={
     fecha:td,local:ST.localActivo,turno,turnoLabel,
     cajaInicial,total,detalle,notas,
-    cajero:ex?.cajero||ST.user?.login,
+    cajero:ex?.cajero||ct?.cajero||ST.user?.login,
     verificado:ex?.verificado||false,
     cerrado:cerrar?true:(ex?.cerrado||false),
     egresosEfectivo,efectivoEntregado,
@@ -2778,14 +2769,7 @@ async function renderArqueosAdmin(){
   document.getElementById('aqStatPend').textContent=pendientes;
   document.getElementById('aqStatFacturado').textContent=fmt(totalFacturado);
 
-  const tbody=document.getElementById('arqueosTbody');
-  if(!arqs.length){
-    tbody.innerHTML=`<tr><td colspan="12"><div class="empty-state"><div class="icon">🏦</div><p>Sin arqueos en este período</p></div></td></tr>`;
-    return;
-  }
-
   tbody.innerHTML=arqs.map(a=>{
-    const ini=a.cajaInicial||a.caja_inicial||0;
     const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1':'Turno 2');
     const egEf=a.egresosEfectivo||[];
     const totEgEf=egEf.reduce((s,e)=>s+(e.monto||0),0);
@@ -2829,10 +2813,12 @@ async function renderArqueosAdmin(){
 
 async function verEgresosArqueo(id){
   const a=await dbGet('arqueos',id);if(!a)return;
-  const egEf=a.egresosEfectivo||[];
+  const ct=await getCajaTurno(a.fecha,a.local,a.turno)||{egresosEfectivo:[]};
+  const egEf=ct.egresosEfectivo||[];
   const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1':'Turno 2');
   const total=egEf.reduce((s,e)=>s+(e.monto||0),0);
-  toast(`${tl} · ${a.cajero||'—'} · ${egEf.length} egreso(s): ${fmt(total)}`,'info');
+  if(!egEf.length){toast('Sin egresos registrados para este turno','info');return;}
+  toast(`${tl} · ${a.cajero||'—'} · ${egEf.length} egreso(s): ${fmt(total)} — ${egEf.map(e=>`${e.concepto} ${fmt(e.monto)}`).join(' | ')}`,'info');
 }
 
 
@@ -3633,51 +3619,73 @@ function getTurnoActual(){
   const h=new Date().getHours();
   return h<14?1:2;
 }
+// ══════════════════════════════════════════════════════════════
+// [31] CAJA INICIAL — tabla caja_turnos separada de arqueos
+// Clave única por turno: fecha + local + turno (1 o 2)
+// ══════════════════════════════════════════════════════════════
 function getCajaKey(){
   return 'tajos_caja_'+hoy()+'_t'+getTurnoActual()+'_l'+ST.localActivo;
 }
+
+// Obtener el registro de caja_turnos del turno actual
+async function getCajaTurno(fecha,local,turno){
+  const rows=await dbAll('cajaTurnos');
+  return rows.find(r=>r.fecha===fecha&&Number(r.local)===Number(local)&&Number(r.turno)===Number(turno))||null;
+}
+
+// Guardar o actualizar caja_turnos con merge — NUNCA sobreescribe campos no enviados
+async function saveCajaTurno(updates){
+  const td=updates.fecha||hoy();
+  const local=updates.local!=null?updates.local:ST.localActivo;
+  const turno=updates.turno!=null?updates.turno:getTurnoActual();
+  const turnoLabel=turno===1?'Turno 1':'Turno 2';
+  const ex=await getCajaTurno(td,local,turno);
+  const merged={
+    fecha:td,local,turno,turnoLabel,
+    cajero:ex?.cajero||ST.user?.login,
+    cajaInicial:updates.cajaInicial!=null?updates.cajaInicial:(ex?.cajaInicial||ex?.caja_inicial||0),
+    cajaInicialConfirmada:updates.cajaInicialConfirmada!=null?updates.cajaInicialConfirmada:(ex?.cajaInicialConfirmada||ex?.caja_inicial_confirmada||false),
+    egresosEfectivo:updates.egresosEfectivo!=null?updates.egresosEfectivo:(ex?.egresosEfectivo||[]),
+  };
+  if(ex){merged.id=ex.id;await dbPut('cajaTurnos',merged);}
+  else{await dbAdd('cajaTurnos',merged);}
+  return merged;
+}
+
 async function mostrarCajaInicialSiNecesario(){
-  // Solo para cajeros (no admin)
   if(!ST.user||ST.user.rol==='admin')return;
   const key=getCajaKey();
-  if(localStorage.getItem(key))return; // ya fue registrado hoy en este turno
-  // Verificar si ya existe arqueo del turno en Supabase
+  if(localStorage.getItem(key)==='done')return;
+  // Verificar si ya existe en caja_turnos
+  const ct=await getCajaTurno(hoy(),ST.localActivo,getTurnoActual());
+  if(ct&&ct.cajaInicialConfirmada){localStorage.setItem(key,'done');return;}
+  // Si ya tenía caja inicial en arqueos (migración), usar ese valor
   const arqs=await dbAll('arqueos');
   const td=hoy();const turno=getTurnoActual();
-  const ex=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
-  if(ex&&(ex.cajaInicial||ex.caja_inicial)){localStorage.setItem(key,'done');return;}
-  // Mostrar modal
+  const exArq=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
+  if(exArq&&(exArq.cajaInicial||exArq.caja_inicial)){
+    // Migrar a caja_turnos
+    await saveCajaTurno({cajaInicial:exArq.cajaInicial||exArq.caja_inicial||0,cajaInicialConfirmada:true});
+    localStorage.setItem(key,'done');return;
+  }
   const info=document.getElementById('cajaInicialInfo');
   const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
   if(info)info.textContent=localNombre(ST.localActivo)+' · '+turnoLabel+' · '+hoy();
   const el=document.getElementById('modalCajaInicial');
   if(el)el.classList.add('visible');
 }
+
 async function guardarCajaInicial(){
   const monto=parseFloat(document.getElementById('cajaInicialMonto').value)||0;
   const nota=document.getElementById('cajaInicialNota').value.trim();
-  const td=hoy();const turno=getTurnoActual();
-  const turnoLabel=turno===1?'Turno 1':'Turno 2';
-  const arqs=await dbAll('arqueos');
-  const ex=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
-  const data={
-    fecha:td,local:ST.localActivo,turno,turnoLabel,
-    cajaInicial:monto,
-    notas:nota,nota,
-    cajero:ex?.cajero||ST.user?.login,
-    verificado:ex?.verificado||false,
-    cerrado:ex?.cerrado||false,
-    egresosEfectivo:ex?.egresosEfectivo||[],
-    efectivoEntregado:ex?.efectivoEntregado||0,
-  };
-  if(ex){data.id=ex.id;await dbPut('arqueos',data);}
-  else{await dbAdd('arqueos',data);}
+  await saveCajaTurno({cajaInicial:monto,cajaInicialConfirmada:true});
   localStorage.setItem(getCajaKey(),'done');
-  await logAct('Registró caja inicial: '+fmt(monto)+' · '+turnoLabel);
+  await logAct('Registró caja inicial: '+fmt(monto)+' · '+(getTurnoActual()===1?'Turno 1':'Turno 2'));
   toast('Caja inicial registrada: '+fmt(monto),'success');
   document.getElementById('modalCajaInicial').classList.remove('visible');
   refreshCaja();
 }
+
 function omitirCajaInicial(){
   localStorage.setItem(getCajaKey(),'skipped');
   document.getElementById('modalCajaInicial').classList.remove('visible');
