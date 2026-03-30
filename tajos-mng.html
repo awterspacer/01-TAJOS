@@ -2358,7 +2358,7 @@ async function refreshCaja(){
   const barbs=await dbAll('barberos');const cl=await dbAll('clientes');
   const bMap={};barbs.forEach(b=>bMap[String(b.id)]=b.nombre+' '+b.apellido);
   const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
-  const lc=cobros.filter(c=>c.local==ST.localActivo);
+  const lc=cobros.filter(c=>Number(c.local)===Number(ST.localActivo));
   const hoyC=lc.filter(c=>c.fecha===fecha);
   const tot=hoyC.reduce((s,c)=>s+c.total,0);
   const ef=hoyC.reduce((s,c)=>s+(c.pagos||[]).filter(p=>p.metodo==='efectivo').reduce((a,p)=>a+(parseFloat(p.monto)||0),0),0);
@@ -2369,7 +2369,7 @@ async function refreshCaja(){
   document.getElementById('cajaDigital').textContent=fmt(dig);
   // Leer caja inicial siempre desde caja_turnos
   const turno=getTurnoActual();
-  const ct=await getCajaTurno(fecha,ST.localActivo,turno)||{cajaInicial:0,egresosEfectivo:[]};
+  const ct=await getCajaTurno(fecha,Number(ST.localActivo),Number(turno))||{cajaInicial:0,egresosEfectivo:[]};
   const cajaIni=ct.cajaInicial||ct.caja_inicial||0;
   const egresosEfCt=(ct.egresosEfectivo||[]).reduce((s,e)=>s+(e.monto||0),0);
   document.getElementById('cajaCajaInicial').textContent=fmt(cajaIni);
@@ -2459,11 +2459,11 @@ async function renderArqueo(){
   const isAdmin=ST.user?.rol==='admin';
   const turno=getTurnoActual();
   const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
-  const h=cobros.filter(c=>c.fecha===td&&c.local==ST.localActivo);
+  const h=cobros.filter(c=>c.fecha===td&&Number(c.local)===Number(ST.localActivo));
   const arqs=await dbAll('arqueos');
-  const aqActual=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno)||{notas:'',turno,cerrado:false};
+  const aqActual=arqs.find(a=>a.fecha===td&&Number(a.local)===Number(ST.localActivo)&&a.turno==turno)||{notas:'',turno,cerrado:false};
   // Leer caja inicial y egresos SIEMPRE desde caja_turnos (fuente de verdad)
-  const ct=await getCajaTurno(td,ST.localActivo,turno)||{cajaInicial:0,egresosEfectivo:[]};
+  const ct=await getCajaTurno(td,Number(ST.localActivo),Number(turno))||{cajaInicial:0,egresosEfectivo:[]};
   const cajaIni=ct.cajaInicial||ct.caja_inicial||0;
   const cajaConfirmada=ct.cajaInicialConfirmada||ct.caja_inicial_confirmada||false;
   const egresosEf=ct.egresosEfectivo||[];
@@ -2476,7 +2476,7 @@ async function renderArqueo(){
 
   // ── VISTA ADMIN: solo lectura + verificación ──
   if(isAdmin){
-    const arqsDia=arqs.filter(a=>a.fecha===td&&a.local==ST.localActivo);
+    const arqsDia=arqs.filter(a=>a.fecha===td&&Number(a.local)===Number(ST.localActivo));
     document.getElementById('arqueoContent').innerHTML=`
       <div class="alert alert-info" style="margin-bottom:16px">📋 Vista de administrador — solo lectura. Verificá los arqueos enviados por los cajeros.</div>
       <div class="arqueo-box">
@@ -2494,7 +2494,7 @@ async function renderArqueo(){
         const egEf=ctA.egresosEfectivo||[];
         const totEgEf=egEf.reduce((s,e)=>s+(e.monto||0),0);
         const efEnt=a.efectivoEntregado||0;
-        const cobsTurno=cobros.filter(c=>c.fecha===td&&c.local==ST.localActivo);
+        const cobsTurno=cobros.filter(c=>c.fecha===td&&Number(c.local)===Number(ST.localActivo));
         const efCobros=cobsTurno.reduce((s,c)=>s+(c.pagos||[]).filter(p=>p.metodo==='efectivo').reduce((x,p)=>x+(parseFloat(p.monto)||0),0),0);
         const efEsperado=ini+efCobros-totEgEf;
         const diferencia=efEnt-efEsperado;
@@ -2690,16 +2690,16 @@ async function _persistirArqueo(cerrar){
   const turno=getTurnoActual();
   const turnoLabel=turno===1?'Turno 1':'Turno 2';
   // Leer caja_turnos — fuente de verdad para cajaInicial y egresos
-  const ct=await getCajaTurno(td,ST.localActivo,turno)||{cajaInicial:0,egresosEfectivo:[]};
+  const ct=await getCajaTurno(td,Number(ST.localActivo),Number(turno))||{cajaInicial:0,egresosEfectivo:[]};
   const cajaInicial=ct.cajaInicial||ct.caja_inicial||0;
   const egresosEfectivo=ct.egresosEfectivo||[];
   // Leer arqueo existente para preservar campos de verificación
   const arqs=await dbAll('arqueos');
-  const ex=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
+  const ex=arqs.find(a=>a.fecha===td&&Number(a.local)===Number(ST.localActivo)&&a.turno==turno);
   const notas=document.getElementById('arqueoNotas')?.value.trim()||ex?.notas||'';
   const efectivoEntregado=parseFloat(document.getElementById('aqEfEntregado')?.value)||ex?.efectivoEntregado||0;
   const cobros=await dbAll('cobros');
-  const h=cobros.filter(co=>co.fecha===td&&co.local==ST.localActivo);
+  const h=cobros.filter(co=>co.fecha===td&&Number(co.local)===Number(ST.localActivo));
   const total=h.reduce((s,co)=>s+co.total,0);
   const detalle={};METODOS.forEach(m=>{detalle[m.id]=h.reduce((s,co)=>s+(co.pagos||[]).filter(p=>p.metodo===m.id).reduce((a,p)=>a+(parseFloat(p.monto)||0),0),0);});
   const data={
@@ -2757,7 +2757,7 @@ async function renderArqueosAdmin(){
 
   let arqs=await dbAll('arqueos');
   arqs=arqs.filter(a=>a.fecha>=desde&&a.fecha<=hasta);
-  if(lf>0)arqs=arqs.filter(a=>a.local==lf);
+  if(lf>0)arqs=arqs.filter(a=>Number(a.local)===Number(lf));
   arqs=arqs.sort((a,b)=>b.fecha>a.fecha?1:b.fecha<a.fecha?-1:(b.turno||0)-(a.turno||0));
 
   // Stats
@@ -2769,24 +2769,31 @@ async function renderArqueosAdmin(){
   document.getElementById('aqStatPend').textContent=pendientes;
   document.getElementById('aqStatFacturado').textContent=fmt(totalFacturado);
 
-  tbody.innerHTML=arqs.map(a=>{
+  const allCajaTurnos=await dbAll('cajaTurnos');
+  const tbody=document.getElementById('arqueosTbody');
+  if(!arqs.length){
+    tbody.innerHTML=`<tr><td colspan="12"><div class="empty-state"><div class="icon">🏦</div><p>Sin arqueos en este período</p></div></td></tr>`;
+    return;
+  }
+
+  // allCajaTurnos ya cargado arriba — lookup sync dentro del map
+  const rows=arqs.map(a=>{
+    const ctA=allCajaTurnos.find(r=>r.fecha===a.fecha&&Number(r.local)===Number(a.local)&&Number(r.turno)===Number(a.turno))||{cajaInicial:0,egresosEfectivo:[]};
+    const ini=ctA.cajaInicial||ctA.caja_inicial||0;
     const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1':'Turno 2');
-    const egEf=a.egresosEfectivo||[];
+    const egEf=ctA.egresosEfectivo||[];
     const totEgEf=egEf.reduce((s,e)=>s+(e.monto||0),0);
     const efEnt=a.efectivoEntregado||0;
-    // Efectivo cobrado: calcular de cobros reales del día/local/turno
-    const cobsTurno=cobros.filter(c=>c.fecha===a.fecha&&c.local==a.local);
+    const cobsTurno=cobros.filter(c=>c.fecha===a.fecha&&Number(c.local)===Number(a.local));
     const efCobros=cobsTurno.reduce((s,c)=>s+(c.pagos||[]).filter(p=>p.metodo==='efectivo').reduce((x,p)=>x+(parseFloat(p.monto)||0),0),0);
     const efEsperado=ini+efCobros-totEgEf;
     const diff=efEnt>0?efEnt-efEsperado:null;
     const diffColor=diff===null?'var(--text-dim)':diff===0?'var(--success)':diff>0?'#f1c40f':'var(--danger)';
     const diffStr=diff===null?'—':diff===0?'✅ 0':diff>0?`+${fmt(diff)}`:`${fmt(diff)}`;
-
     let estadoBadge,estadoLabel;
     if(a.verificado){estadoBadge='badge-green';estadoLabel='✅ Verificado';}
     else if(a.cerrado){estadoBadge='badge-gold';estadoLabel='📤 Cerrado';}
     else{estadoBadge='badge-yellow';estadoLabel='⏳ En curso';}
-
     return `<tr>
       <td style="white-space:nowrap">${fmtD(a.fecha)}</td>
       <td>${localNombre(a.local)}</td>
@@ -2808,7 +2815,8 @@ async function renderArqueosAdmin(){
         ${egEf.length?`<button class="btn btn-ghost btn-sm" onclick="verEgresosArqueo(${a.id})" title="Ver egresos">💸</button>`:''}
       </td>
     </tr>`;
-  }).join('');
+  });
+  tbody.innerHTML=rows.join('');
 }
 
 async function verEgresosArqueo(id){
@@ -3662,7 +3670,7 @@ async function mostrarCajaInicialSiNecesario(){
   // Si ya tenía caja inicial en arqueos (migración), usar ese valor
   const arqs=await dbAll('arqueos');
   const td=hoy();const turno=getTurnoActual();
-  const exArq=arqs.find(a=>a.fecha===td&&a.local==ST.localActivo&&a.turno==turno);
+  const exArq=arqs.find(a=>a.fecha===td&&Number(a.local)===Number(ST.localActivo)&&a.turno==turno);
   if(exArq&&(exArq.cajaInicial||exArq.caja_inicial)){
     // Migrar a caja_turnos
     await saveCajaTurno({cajaInicial:exArq.cajaInicial||exArq.caja_inicial||0,cajaInicialConfirmada:true});
