@@ -280,6 +280,7 @@ tbody tr:last-child td{border-bottom:none;}
   <div class="sidebar-section-label admin-only">Admin</div>
   <div class="nav-item admin-only" data-page="usuarios"><span class="icon">🔐</span>Usuarios</div>
   <div class="nav-item admin-only" data-page="historial"><span class="icon">📜</span>Historial</div>
+  <div class="nav-item admin-only" data-page="arqueos"><span class="icon">🏦</span>Arqueos</div>
   <div class="sidebar-section-label">Reportes</div>
   <div class="nav-item" data-page="reportes"><span class="icon">📈</span>Reportes</div>
   <div class="nav-item" data-page="giftcards"><span class="icon">🎁</span>Giftcards</div>
@@ -457,6 +458,36 @@ tbody tr:last-child td{border-bottom:none;}
       <select class="form-control" style="width:160px" id="histUsuFiltro" onchange="renderHistorial()"><option value="">Todos los usuarios</option></select>
     </div>
     <div id="historialList"></div>
+  </div>
+</div>
+
+<!-- REPORTES -->
+<div class="page" id="page-arqueos">
+  <div class="section-header">
+    <div><div class="section-title">ARQUEOS</div><div class="section-sub">Historial de cierres de caja por turno</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select class="form-control" id="arqueoFiltroLocal" style="width:150px" onchange="renderArqueosAdmin()">
+        <option value="0">Todas las sucursales</option>
+        <option value="1">Central</option>
+        <option value="2">Superseis</option>
+      </select>
+      <input type="date" class="form-control" id="arqueoFiltroDesde" style="width:150px" onchange="renderArqueosAdmin()">
+      <input type="date" class="form-control" id="arqueoFiltroHasta" style="width:150px" onchange="renderArqueosAdmin()">
+    </div>
+  </div>
+  <div class="grid-4" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-label">Arqueos del período</div><div class="stat-value" id="aqStatTotal">0</div><div class="stat-icon">🏦</div></div>
+    <div class="stat-card"><div class="stat-label">Verificados</div><div class="stat-value" id="aqStatVerif" style="color:var(--success)">0</div><div class="stat-icon">✅</div></div>
+    <div class="stat-card"><div class="stat-label">Pendientes</div><div class="stat-value" id="aqStatPend" style="color:#f1c40f">0</div><div class="stat-icon">⏳</div></div>
+    <div class="stat-card"><div class="stat-label">Total facturado</div><div class="stat-value" id="aqStatFacturado">Gs. 0</div><div class="stat-icon">💰</div></div>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Fecha</th><th>Sucursal</th><th>Turno</th><th>Cajero</th><th>Caja inicial</th><th>Efectivo cobrado</th><th>Egresos ef.</th><th>Entregado</th><th>Diferencia</th><th>Total facturado</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="arqueosTbody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -833,8 +864,6 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="form-group"><label class="form-label">Nueva Contraseña (dejar vacío = sin cambios)</label><input type="password" class="form-control" id="perfilPassword" placeholder="Nueva contraseña..."></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" onclick="closeModal('modalMiPerfil');openModal('modalArqueo')">🏦 Cierre de Caja</button>
-      <div style="flex:1"></div>
       <button class="btn btn-ghost" onclick="closeModal('modalMiPerfil')">Cancelar</button>
       <button class="btn btn-gold" onclick="guardarMiPerfil()">Guardar Cambios</button>
     </div>
@@ -962,6 +991,7 @@ const SUPA_URL='https://tgwhegmgchnttsmrhcfc.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnd2hlZ21nY2hudHRzbXJoY2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODg1ODgsImV4cCI6MjA4OTQ2NDU4OH0.3g20p6yGber_j6HNB5oQqesOm_YgQ_fo9P2Yl2jGPbM';
 
 
+
 // ══════════════════════════════════════════════════════════════
 // MAPA: nombre de store (IndexedDB) → nombre de tabla (Supabase)
 // Los nombres en snake_case corresponden al schema SQL generado.
@@ -1010,7 +1040,7 @@ const FIELD_TO_DB = {
 const FIELD_FROM_DB = Object.fromEntries(Object.entries(FIELD_TO_DB).map(([k,v])=>[v,k]));
 
 const SUPA_COLS={
-  cobros:new Set(['id','cliente_id','barbero_id','fecha','hora','local','items','pagos','total','factura','giftcard_id','registrado_por','created_at']),
+  cobros:new Set(['id','cliente_id','barbero_id','fecha','hora','local','items','pagos','total','factura','giftcard_id','registrado_por','cajero','created_at']),
   barberos:new Set(['id','nombre','apellido','fecha_ingreso','local','comision','celular','email','activo','created_at','updated_at']),
   barbero_users:new Set(['id','barbero_id','login','pin','activo','ultimo_acceso','created_at']),
   clientes:new Set(['id','nombre','apellido','documento','celular','email','notas','created_at','updated_at']),
@@ -1101,10 +1131,10 @@ async function syncPending(){
     try{
       const tbl=STORE_TABLE[op.store]||op.store;
       if(op.type==='insert'){
-        const body=toDbObj(op.data);delete body.id;
+        const body=toDbObj(op.data,tbl);delete body.id;
         await supaFetch('POST',tbl,null,body);
       }else if(op.type==='upsert'){
-        const body=toDbObj(op.data);
+        const body=toDbObj(op.data,tbl);delete body.id;
         await supaFetch('POST',tbl+'?on_conflict=id',null,body,{'Prefer':'resolution=merge-duplicates'});
       }else if(op.type==='delete'){
         await supaFetch('DELETE',tbl,`id=eq.${op.id}`);
@@ -1389,7 +1419,7 @@ async function logAct(accion){
 }
 
 // ══ NAVIGATION ══
-const TITLES={dashboard:'Dashboard',agenda:'Agenda',caja:'Caja',clientes:'Clientes',barberos:'Barberos',servicios:'Catálogo',usuarios:'Usuarios',historial:'Historial',reportes:'Reportes'};
+const TITLES={dashboard:'Dashboard',agenda:'Agenda',caja:'Caja',clientes:'Clientes',barberos:'Barberos',servicios:'Catálogo',usuarios:'Usuarios',historial:'Historial',arqueos:'Arqueos',reportes:'Reportes'};
 document.querySelectorAll('.nav-item[data-page]').forEach(el=>el.addEventListener('click',()=>{navigate(el.dataset.page);closeSidebar();}));
 
 function navigate(page){
@@ -1407,6 +1437,7 @@ function navigate(page){
   if(page==='servicios')renderCatalogo();
   if(page==='usuarios')renderUsuarios();
   if(page==='historial')renderHistorial();
+  if(page==='arqueos')renderArqueosAdmin();
   if(page==='reportes')generarReporte();
   if(page==='giftcards')renderGiftcards();
   if(page==='consumos')renderConsumos();
@@ -1797,7 +1828,7 @@ async function renderClientes(filter=''){
   const tbody=document.getElementById('clientesTbody');
   if(!cl.length){tbody.innerHTML=`<tr><td colspan="8"><div class="empty-state"><div class="icon">👥</div><p>No hay clientes</p></div></td></tr>`;return;}
   tbody.innerHTML=cl.map(c=>{
-    const cc=cobros.filter(co=>co.clienteId===c.id);
+    const cc=cobros.filter(co=>Number(co.clienteId||co.cliente_id)===Number(c.id));
     const ult=cc.sort((a,b)=>b.fecha>a.fecha?1:-1)[0];
     return `<tr>
       <td style="color:var(--text-dim)">${c.id}</td><td><strong>${c.nombre} ${c.apellido}</strong></td>
@@ -1843,8 +1874,8 @@ async function eliminarCliente(id){
 
 async function verHistCliente(id){
   const c=await dbGet('clientes',id);const cobros=await dbAll('cobros');const barbs=await dbAll('barberos');
-  const bMap={};barbs.forEach(b=>bMap[b.id]=b.nombre+' '+b.apellido);
-  const cc=cobros.filter(co=>co.clienteId===id).sort((a,b)=>b.fecha>a.fecha?1:-1);
+  const bMap={};barbs.forEach(b=>bMap[String(b.id)]=b.nombre+' '+b.apellido);
+  const cc=cobros.filter(co=>Number(co.clienteId||co.cliente_id)===Number(id)).sort((a,b)=>b.fecha>a.fecha?1:-1);
   const total=cc.reduce((s,co)=>s+(co.total||0),0);
   document.getElementById('histClienteTitulo').textContent=`📋 ${c.nombre} ${c.apellido}`;
   document.getElementById('histClienteContent').innerHTML=`
@@ -1856,9 +1887,9 @@ async function verHistCliente(id){
     ${cc.length?cc.map(co=>`<div class="history-item">
       <div class="history-dot"></div>
       <div class="history-info">
-        <div class="history-title">${co.items.filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—'}</div>
-        <div class="history-meta">${fmtD(co.fecha)} · ${co.hora||''} · ${bMap[co.barberoId]||'?'}</div>
-        ${co.items.filter(i=>i.tipo==='producto').length?`<div style="font-size:.75rem;color:var(--text-dim)">Productos: ${co.items.filter(i=>i.tipo==='producto').map(i=>i.nombre).join(', ')}</div>`:''}
+        <div class="history-title">${(co.items||[]).filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—'}</div>
+        <div class="history-meta">${fmtD(co.fecha)} · ${co.hora||''} · ${bMap[String(co.barberoId||co.barbero_id||'')]||'?'}</div>
+        ${(co.items||[]).filter(i=>i.tipo==='producto').length?`<div style="font-size:.75rem;color:var(--text-dim)">Productos: ${(co.items||[]).filter(i=>i.tipo==='producto').map(i=>i.nombre).join(', ')}</div>`:''}
       </div>
       <div class="history-amount">${fmt(co.total)}</div>
     </div>`).join(''):'<div class="empty-state"><div class="icon">📋</div><p>Sin visitas</p></div>'}`;
@@ -2014,7 +2045,7 @@ async function switchDtB(tab,el){
   const ms=td.slice(0,7)+'-01';
   const list=tab==='dia'?cobros.filter(c=>c.fecha===td):tab==='semana'?cobros.filter(c=>c.fecha>=ws):tab==='mes'?cobros.filter(c=>c.fecha>=ms):cobros;
   const t=list.reduce((s,c)=>s+(c.total||0),0);const com=calcComisionLista(list);
-  const cl=await dbAll('clientes');const cMap={};cl.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const cl=await dbAll('clientes');const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
   document.getElementById('dtBContent').innerHTML=`
     <div class="grid-2" style="margin-bottom:16px;gap:10px">
       <div class="stat-card"><div class="stat-label">Facturado</div><div class="stat-value" style="font-size:1.5rem">${fmt(t)}</div></div>
@@ -2024,8 +2055,8 @@ async function switchDtB(tab,el){
     ${list.length?list.sort((a,b)=>b.fecha>a.fecha?1:-1).map(co=>`<div class="history-item">
       <div class="history-dot"></div>
       <div class="history-info">
-        <div class="history-title">${co.items.filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—'}</div>
-        <div class="history-meta">${fmtD(co.fecha)} ${co.hora?'· '+co.hora:''} · ${cMap[co.clienteId]||'Sin cliente'}</div>
+        <div class="history-title">${(co.items||[]).filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—'}</div>
+        <div class="history-meta">${fmtD(co.fecha)} ${co.hora?'· '+co.hora:''} · ${cMap[String(co.clienteId||co.cliente_id||'')]||'Sin cliente'}</div>
       </div>
       <div style="text-align:right">
         <div class="history-amount">${fmt(co.total)}</div>
@@ -2044,7 +2075,7 @@ async function renderAgenda(){
   const bf=barbs.filter(b=>b.local==ST.localActivo||b.local==0);
   const turnos=await dbAll('turnos');
   const td=turnos.filter(t=>t.fecha===fecha&&t.local==ST.localActivo);
-  const cl=await dbAll('clientes');const cMap={};cl.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const cl=await dbAll('clientes');const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
   if(!bf.length){document.getElementById('agendaGrid').innerHTML='<div class="empty-state"><div class="icon">💈</div><p>No hay barberos en esta sucursal</p></div>';return;}
   const cols=`60px repeat(${bf.length},minmax(140px,1fr))`;
   let html=`<div style="display:grid;grid-template-columns:${cols};position:sticky;top:0;z-index:5;background:var(--bg-raised);border-bottom:1px solid var(--border)">
@@ -2057,7 +2088,7 @@ async function renderAgenda(){
       const t=td.find(t=>t.hora===hora&&Number(t.barberoId||t.barbero_id)===Number(b.id));
       if(t){
         const sl=(t.servicios||[]).join(', ')||'—';
-        const cn=cMap[t.clienteId]||t.clienteNombre||'Sin nombre';
+        const cn=cMap[String(t.clienteId||t.cliente_id||'')]||t.clienteNombre||'Sin nombre';
         html+=`<div class="agenda-cell"><div class="agenda-slot occupied" onclick="verDetTurno(${t.id})">
           <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cn}</div>
           <div style="font-size:.72rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${sl}</div>
@@ -2078,12 +2109,12 @@ function preFillTurno(fecha,hora,bId){document.getElementById('turnoFecha').valu
 async function verDetTurno(id){
   const t=await dbGet('turnos',id);if(!t)return;
   const barbs=await dbAll('barberos');const cl=await dbAll('clientes');
-  const bMap={};barbs.forEach(b=>bMap[b.id]=b.nombre+' '+b.apellido);
-  const cMap={};cl.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const bMap={};barbs.forEach(b=>bMap[String(b.id)]=b.nombre+' '+b.apellido);
+  const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
   document.getElementById('detTurnoContent').innerHTML=`
     <div class="grid-2" style="gap:12px;margin-bottom:14px">
-      <div><div class="form-label">Cliente</div><div style="font-weight:600">${cMap[t.clienteId]||t.clienteNombre||'—'}</div></div>
-      <div><div class="form-label">Barbero</div><div style="font-weight:600">${bMap[t.barberoId]||'—'}</div></div>
+      <div><div class="form-label">Cliente</div><div style="font-weight:600">${cMap[String(t.clienteId||t.cliente_id||'')]||t.clienteNombre||'—'}</div></div>
+      <div><div class="form-label">Barbero</div><div style="font-weight:600">${bMap[String(t.barberoId||t.barbero_id||'')]||'—'}</div></div>
       <div><div class="form-label">Fecha</div><div>${fmtD(t.fecha)}</div></div>
       <div><div class="form-label">Hora</div><div>${t.hora}</div></div>
       <div><div class="form-label">Servicios</div><div>${(t.servicios||[]).join(', ')||'—'}</div></div>
@@ -2297,7 +2328,7 @@ async function guardarCobro(){
     await dbPut('giftcards',gcUsada);
     ST._gcAplicada=null;
   }
-  await dbAdd('cobros',{clienteId:cId,barberoId:bId,items:[...ST.cobroItems],pagos:ST.cobroPagos.map(p=>({metodo:p.metodo,monto:parseFloat(p.monto)||0})),total:tot,factura:facturaAmt,giftcardId:gcUsada?.id||null,fecha:toDS(now),hora:now.toTimeString().slice(0,5),local:ST.localActivo,registradoPor:ST.user?.login||'?'});
+  await dbAdd('cobros',{clienteId:cId,barberoId:bId,items:[...ST.cobroItems],pagos:ST.cobroPagos.map(p=>({metodo:p.metodo,monto:parseFloat(p.monto)||0})),total:tot,factura:facturaAmt,giftcardId:gcUsada?.id||null,fecha:toDS(now),hora:now.toTimeString().slice(0,5),local:ST.localActivo,registradoPor:ST.user?.login||'?',cajero:ST.user?.login||'?'});
   await logAct(`Registró cobro de ${fmt(tot)} · Cliente: ${c?c.nombre+' '+c.apellido:'sin registro'} · Barbero: ${b?b.nombre+' '+b.apellido:'?'}`);
   toast('Cobro registrado','success');closeModal('modalNuevoCobro');
   if(window._turnoACobrar){
@@ -2312,8 +2343,8 @@ async function refreshCaja(){
   const fecha=document.getElementById('cajaFechaFiltro').value||hoy();
   const buscar=(document.getElementById('cajaBuscar').value||'').toLowerCase();
   const barbs=await dbAll('barberos');const cl=await dbAll('clientes');
-  const bMap={};barbs.forEach(b=>bMap[b.id]=b.nombre+' '+b.apellido);
-  const cMap={};cl.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const bMap={};barbs.forEach(b=>bMap[String(b.id)]=b.nombre+' '+b.apellido);
+  const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
   const lc=cobros.filter(c=>c.local==ST.localActivo);
   const hoyC=lc.filter(c=>c.fecha===fecha);
   const tot=hoyC.reduce((s,c)=>s+c.total,0);
@@ -2345,15 +2376,15 @@ async function refreshCaja(){
   }else if(bannerEl){bannerEl.innerHTML='';}
   let fl=[...lc];
   if(fecha)fl=fl.filter(c=>c.fecha===fecha);
-  if(buscar)fl=fl.filter(c=>(cMap[c.clienteId]||'').toLowerCase().includes(buscar)||(bMap[c.barberoId]||'').toLowerCase().includes(buscar));
+  if(buscar)fl=fl.filter(c=>(cMap[String(c.clienteId||c.cliente_id||'')]||'').toLowerCase().includes(buscar)||(bMap[String(c.barberoId||c.barbero_id||'')]||'').toLowerCase().includes(buscar));
   fl.sort((a,b)=>b.fecha>a.fecha?1:b.fecha<a.fecha?-1:(b.hora||'')>(a.hora||'')?1:-1);
   const tbody=document.getElementById('cajaTbody');
   if(!fl.length){tbody.innerHTML=`<tr><td colspan="8"><div class="empty-state"><div class="icon">💰</div><p>Sin cobros</p></div></td></tr>`;return;}
   tbody.innerHTML=fl.map(co=>{
     const ms=[...new Set((co.pagos||[]).map(p=>METODOS.find(m=>m.id===p.metodo)?.label||p.metodo))].join(', ');
     return `<tr>
-      <td>${co.hora||fmtD(co.fecha)}</td><td>${cMap[co.clienteId]||'—'}</td><td>${bMap[co.barberoId]||'?'}</td>
-      <td style="font-size:.8rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${co.items.map(i=>i.nombre).join(', ')}</td>
+      <td>${co.hora||fmtD(co.fecha)}</td><td>${cMap[String(co.clienteId||co.cliente_id||'')]||'—'}</td><td>${bMap[String(co.barberoId||co.barbero_id||'')]||'?'}</td>
+      <td style="font-size:.8rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(co.items||[]).map(i=>i.nombre).join(', ')||'—'}</td>
       <td style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${fmt(co.total)}</td>
       <td><span class="badge badge-gold">${ms}</span></td>
       <td style="font-size:.78rem;color:var(--text-muted)">${co.cajero||'—'}</td>
@@ -2369,19 +2400,19 @@ function filtrarCobros(){refreshCaja();}
 async function verDetCobro(id){
   const co=await dbGet('cobros',id);if(!co)return;
   const barbs=await dbAll('barberos');const cl=await dbAll('clientes');
-  const bMap={};barbs.forEach(b=>bMap[b.id]=b.nombre+' '+b.apellido);
-  const cMap={};cl.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const bMap={};barbs.forEach(b=>bMap[String(b.id)]=b.nombre+' '+b.apellido);
+  const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
   document.getElementById('detCobroContent').innerHTML=`
     <div style="text-align:center;margin-bottom:16px">
       <div style="font-family:var(--font-display);font-size:2rem;color:var(--gold-light)">${fmt(co.total)}</div>
       <div style="color:var(--text-muted);font-size:.82rem">${fmtD(co.fecha)} ${co.hora?'· '+co.hora:''} · ${localNombre(co.local)} · Cajero: ${co.cajero||'?'}</div>
     </div>
     <div class="grid-2" style="margin-bottom:14px;gap:10px">
-      <div><div class="form-label">Cliente</div><div>${cMap[co.clienteId]||'Sin registro'}</div></div>
-      <div><div class="form-label">Barbero</div><div>${bMap[co.barberoId]||'?'}</div></div>
+      <div><div class="form-label">Cliente</div><div>${cMap[String(co.clienteId||co.cliente_id||'')]||'Sin registro'}</div></div>
+      <div><div class="form-label">Barbero</div><div>${bMap[String(co.barberoId||co.barbero_id||'')]||'?'}</div></div>
     </div>
     <div class="card-title" style="margin-bottom:8px">Ítems</div>
-    ${co.items.map(i=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(201,148,10,.06)">
+    ${(co.items||[]).map(i=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(201,148,10,.06)">
       <div><span class="badge ${i.tipo==='servicio'?'badge-gold':'badge-blue'}" style="margin-right:6px">${i.tipo}</span>${i.nombre}</div>
       <div style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${fmt(i.precio)}</div>
     </div>`).join('')}
@@ -2389,7 +2420,7 @@ async function verDetCobro(id){
     <div class="card-title" style="margin-bottom:8px">Pagos</div>
     ${(co.pagos||[]).map(p=>{const m=METODOS.find(m=>m.id===p.metodo);return `<div style="display:flex;justify-content:space-between;padding:5px 0"><div>${m?.icon||''} ${m?.label||p.metodo}</div><div style="font-family:var(--font-cond);font-weight:700">${fmt(p.monto)}</div></div>`;}).join('')}
     <div class="divider"></div>
-    <div style="font-size:.8rem;color:var(--success)">Comisión barbero: ${fmt(co.total*0.5)}</div>
+    <div style="font-size:.8rem;color:var(--success)">Comisión barbero: ${fmt(calcComisionCobro(co))}</div>
     ${co.factura>0?`<div style="font-size:.8rem;color:var(--text-muted);margin-top:4px">🧾 Factura emitida por: <strong>${fmt(co.factura)}</strong></div>`:''}
     ${co.giftcardId?`<div style="font-size:.8rem;color:var(--text-muted);margin-top:4px">🎁 Giftcard aplicada</div>`:''}`;
   openModal('modalDetalleCobro');
@@ -2717,12 +2748,97 @@ async function verificarArqueo(id){
   await dbPut('arqueos',a);
   await logAct('Verificó arqueo ID '+id);
   toast('Arqueo verificado','success');renderArqueo();
+  // Refrescar la página de arqueos si está activa
+  if(document.getElementById('page-arqueos')?.classList.contains('active'))renderArqueosAdmin();
+}
+
+async function renderArqueosAdmin(){
+  const cobros=await dbAll('cobros');
+  const lf=+document.getElementById('arqueoFiltroLocal')?.value||0;
+  const td=hoy();
+  // Default: último mes
+  const desdeEl=document.getElementById('arqueoFiltroDesde');
+  const hastaEl=document.getElementById('arqueoFiltroHasta');
+  if(desdeEl&&!desdeEl.value)desdeEl.value=td.slice(0,7)+'-01';
+  if(hastaEl&&!hastaEl.value)hastaEl.value=td;
+  const desde=desdeEl?.value||td.slice(0,7)+'-01';
+  const hasta=hastaEl?.value||td;
+
+  let arqs=await dbAll('arqueos');
+  arqs=arqs.filter(a=>a.fecha>=desde&&a.fecha<=hasta);
+  if(lf>0)arqs=arqs.filter(a=>a.local==lf);
+  arqs=arqs.sort((a,b)=>b.fecha>a.fecha?1:b.fecha<a.fecha?-1:(b.turno||0)-(a.turno||0));
+
+  // Stats
+  const verificados=arqs.filter(a=>a.verificado).length;
+  const pendientes=arqs.filter(a=>a.cerrado&&!a.verificado).length;
+  const totalFacturado=arqs.reduce((s,a)=>s+(a.total||0),0);
+  document.getElementById('aqStatTotal').textContent=arqs.length;
+  document.getElementById('aqStatVerif').textContent=verificados;
+  document.getElementById('aqStatPend').textContent=pendientes;
+  document.getElementById('aqStatFacturado').textContent=fmt(totalFacturado);
+
+  const tbody=document.getElementById('arqueosTbody');
+  if(!arqs.length){
+    tbody.innerHTML=`<tr><td colspan="12"><div class="empty-state"><div class="icon">🏦</div><p>Sin arqueos en este período</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML=arqs.map(a=>{
+    const ini=a.cajaInicial||a.caja_inicial||0;
+    const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1':'Turno 2');
+    const egEf=a.egresosEfectivo||[];
+    const totEgEf=egEf.reduce((s,e)=>s+(e.monto||0),0);
+    const efEnt=a.efectivoEntregado||0;
+    // Efectivo cobrado: calcular de cobros reales del día/local/turno
+    const cobsTurno=cobros.filter(c=>c.fecha===a.fecha&&c.local==a.local);
+    const efCobros=cobsTurno.reduce((s,c)=>s+(c.pagos||[]).filter(p=>p.metodo==='efectivo').reduce((x,p)=>x+(parseFloat(p.monto)||0),0),0);
+    const efEsperado=ini+efCobros-totEgEf;
+    const diff=efEnt>0?efEnt-efEsperado:null;
+    const diffColor=diff===null?'var(--text-dim)':diff===0?'var(--success)':diff>0?'#f1c40f':'var(--danger)';
+    const diffStr=diff===null?'—':diff===0?'✅ 0':diff>0?`+${fmt(diff)}`:`${fmt(diff)}`;
+
+    let estadoBadge,estadoLabel;
+    if(a.verificado){estadoBadge='badge-green';estadoLabel='✅ Verificado';}
+    else if(a.cerrado){estadoBadge='badge-gold';estadoLabel='📤 Cerrado';}
+    else{estadoBadge='badge-yellow';estadoLabel='⏳ En curso';}
+
+    return `<tr>
+      <td style="white-space:nowrap">${fmtD(a.fecha)}</td>
+      <td>${localNombre(a.local)}</td>
+      <td><span class="badge badge-blue">${tl}</span></td>
+      <td style="font-weight:600">${a.cajero||'—'}</td>
+      <td style="font-family:var(--font-cond)">${fmt(ini)}</td>
+      <td style="font-family:var(--font-cond)">${fmt(efCobros)}</td>
+      <td style="font-family:var(--font-cond);color:#e74c3c">${totEgEf>0?'−'+fmt(totEgEf):'—'}</td>
+      <td style="font-family:var(--font-cond)">${efEnt>0?fmt(efEnt):'—'}</td>
+      <td style="font-family:var(--font-cond);font-weight:700;color:${diffColor}">${diffStr}</td>
+      <td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(a.total||0)}</td>
+      <td><span class="badge ${estadoBadge}">${estadoLabel}</span></td>
+      <td>
+        ${!a.verificado&&a.cerrado
+          ?`<button class="btn btn-gold btn-sm" onclick="verificarArqueo(${a.id})">✅ Verificar</button>`
+          :a.verificado
+            ?`<span style="font-size:.75rem;color:var(--text-muted)">${fmtD((a.verificadoAt||'').slice(0,10))} · ${a.verificadoPor||a.verificado_por||'—'}</span>`
+            :''}
+        ${egEf.length?`<button class="btn btn-ghost btn-sm" onclick="verEgresosArqueo(${a.id})" title="Ver egresos">💸</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function verEgresosArqueo(id){
+  const a=await dbGet('arqueos',id);if(!a)return;
+  const egEf=a.egresosEfectivo||[];
+  const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1':'Turno 2');
+  const total=egEf.reduce((s,e)=>s+(e.monto||0),0);
+  toast(`${tl} · ${a.cajero||'—'} · ${egEf.length} egreso(s): ${fmt(total)}`,'info');
 }
 
 
 // ══ HELPER: comisión de un cobro basada en % de cada servicio/producto ══
 function calcComisionCobro(cobro){
-  return cobro.items.reduce((s,i)=>{
+  return (cobro.items||[]).reduce((s,i)=>{
     if(i.tipo==='servicio') return s+i.precio*((i.comision??50)/100);
     if(i.tipo==='producto'&&i.comisionable) return s+i.precio*0.10;
     return s;
@@ -2743,16 +2859,16 @@ async function refreshDash(){
   document.getElementById('statIngresos').textContent=fmt(tot);document.getElementById('statIngSub').textContent=`${hc.length} servicios`;
   document.getElementById('statTurnos').textContent=th.length;document.getElementById('statTurnosSub').textContent=`${pen.length} pendientes`;
   document.getElementById('statClientes').textContent=cl.length;document.getElementById('statComisiones').textContent=fmt(com);
-  const bMap={};barbs.forEach(b=>bMap[b.id]=b.nombre);const cMap={};cl.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const bMap={};barbs.forEach(b=>bMap[String(b.id)]=b.nombre);const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
   const prox=th.filter(t=>t.estado!=='cancelado').sort((a,b)=>a.hora>b.hora?1:-1).slice(0,6);
   document.getElementById('dashProximosTurnos').innerHTML=prox.length?prox.map(t=>`<div class="history-item">
     <div class="history-dot" style="background:${t.estado==='completado'?'var(--success)':'var(--gold)'}"></div>
-    <div class="history-info"><div class="history-title">${cMap[t.clienteId]||t.clienteNombre||'Sin nombre'}</div><div class="history-meta">${t.hora} · ${bMap[t.barberoId]||'?'}</div></div>
+    <div class="history-info"><div class="history-title">${cMap[String(t.clienteId||t.cliente_id||'')]||t.clienteNombre||'Sin nombre'}</div><div class="history-meta">${t.hora} · ${bMap[String(t.barberoId||t.barbero_id||'')]||'?'}</div></div>
     <span class="badge ${t.estado==='completado'?'badge-green':'badge-gold'}">${t.estado||'pendiente'}</span>
   </div>`).join(''):'<div class="empty-state"><div class="icon">📅</div><p>Sin turnos hoy</p></div>';
   const utx=hc.sort((a,b)=>(b.hora||'')>(a.hora||'')?1:-1).slice(0,5);
   document.getElementById('dashUltimasTx').innerHTML=utx.length?utx.map(co=>`<div class="history-item">
-    <div class="history-dot"></div><div class="history-info"><div class="history-title">${cMap[co.clienteId]||'Sin registro'}</div><div class="history-meta">${co.hora||''} · ${bMap[co.barberoId]||'?'}</div></div>
+    <div class="history-dot"></div><div class="history-info"><div class="history-title">${cMap[String(co.clienteId||co.cliente_id||'')]||'Sin registro'}</div><div class="history-meta">${co.hora||''} · ${bMap[String(co.barberoId||co.barbero_id||'')]||'?'}</div></div>
     <div class="history-amount">${fmt(co.total)}</div>
   </div>`).join(''):'<div class="empty-state"><div class="icon">💳</div><p>Sin transacciones hoy</p></div>';
   const lb=barbs.filter(b=>b.local==ST.localActivo||b.local==0);
@@ -2783,9 +2899,9 @@ async function generarReporte(){
   else if(per==='mes')desde=td.slice(0,7)+'-01';
   else{desde=document.getElementById('reporteDesde').value||td;hasta=document.getElementById('reporteHasta').value||td;}
   let cobros=await dbAll('cobros');cobros=cobros.filter(c=>c.fecha>=desde&&c.fecha<=hasta);
-  if(lf>0)cobros=cobros.filter(c=>c.local==lf);if(bf>0)cobros=cobros.filter(c=>c.barberoId==bf);
+  if(lf>0)cobros=cobros.filter(c=>c.local==lf);if(bf>0)cobros=cobros.filter(c=>Number(c.barberoId||c.barbero_id)===Number(bf));
   const tot=cobros.reduce((s,c)=>s+c.total,0);
-  const tsv=cobros.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').length,0);
+  const tsv=cobros.reduce((s,c)=>s+(c.items||[]).filter(i=>i.tipo==='servicio').length,0);
   const cliAt=new Set(cobros.filter(c=>c.clienteId).map(c=>c.clienteId)).size;
   const totFactura=cobros.reduce((s,co)=>s+(co.factura||0),0);
   const pendFact=tot-totFactura;
@@ -2804,7 +2920,7 @@ async function generarReporte(){
     const bco=calcComisionLista(bc);const pct=tot?(bt/tot*100).toFixed(1):0;
     return `<tr><td><strong>${b.nombre} ${b.apellido}</strong></td><td>${bc.length}</td><td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(bt)}</td><td style="font-family:var(--font-cond);color:var(--success)">${fmt(bco)}</td><td style="min-width:120px"><div class="comm-bar-wrap"><div class="comm-bar" style="width:${pct}%"></div></div><div style="font-size:.72rem;color:var(--text-dim)">${pct}%</div></td></tr>`;
   }).join('')||'<tr><td colspan="5"><div class="empty-state"><p>Sin datos</p></div></td></tr>';
-  const sMap={};cobros.forEach(co=>co.items.filter(i=>i.tipo==='servicio').forEach(i=>{if(!sMap[i.nombre])sMap[i.nombre]={count:0,total:0};sMap[i.nombre].count++;sMap[i.nombre].total+=i.precio;}));
+  const sMap={};cobros.forEach(co=>(co.items||[]).filter(i=>i.tipo==='servicio').forEach(i=>{if(!sMap[i.nombre])sMap[i.nombre]={count:0,total:0};sMap[i.nombre].count++;sMap[i.nombre].total+=i.precio;}));
   const sL=Object.entries(sMap).sort((a,b)=>b[1].total-a[1].total);const stot=sL.reduce((s,[,v])=>s+v.total,0);
   document.getElementById('rServiciosTbody').innerHTML=sL.length?sL.map(([n,d])=>`<tr><td><strong>${n}</strong></td><td>${d.count}</td><td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(d.total)}</td><td><div class="comm-bar-wrap"><div class="comm-bar" style="width:${stot?(d.total/stot*100).toFixed(1):0}%"></div></div><span style="font-size:.75rem;color:var(--text-muted)">${stot?(d.total/stot*100).toFixed(1):0}%</span></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state"><p>Sin datos</p></div></td></tr>';
 }
@@ -3326,7 +3442,7 @@ async function guardarConsumo(){
 async function renderConsumos(){
   const egresos=await dbAll('egresos');
   const barbs=await dbAll('barberos');
-  const bMap={};barbs.forEach(b=>bMap[b.id]=b.nombre+' '+b.apellido);
+  const bMap={};barbs.forEach(b=>bMap[String(b.id)]=b.nombre+' '+b.apellido);
   // populate filtro barbero
   const filtBarbSel=document.getElementById('consFiltroBarb');
   if(filtBarbSel){
@@ -3344,18 +3460,18 @@ async function renderConsumos(){
   statEl('consBarbs',new Set(mesList.map(e=>e.barberoId)).size);
   // Filtered list
   let lista=[...egresos];
-  if(filtBarb)lista=lista.filter(e=>e.barberoId==filtBarb);
+  if(filtBarb)lista=lista.filter(e=>Number(e.barberoId||e.barbero_id)===Number(filtBarb));
   if(filtFecha)lista=lista.filter(e=>e.fecha===filtFecha);
   lista.sort((a,b)=>b.ts>a.ts?1:-1);
   const tbody=document.getElementById('consumosTbody');
   if(!lista.length){tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="icon">🧴</div><p>Sin consumos registrados</p></div></td></tr>';return;}
   tbody.innerHTML=lista.map(e=>`<tr>
     <td>${fmtD(e.fecha)}</td>
-    <td><strong>${bMap[e.barberoId]||'?'}</strong></td>
+    <td><strong>${bMap[String(e.barberoId||e.barbero_id||'')]||'?'}</strong></td>
     <td>${e.producto||'—'}</td>
     <td style="text-align:center">${e.cantidad||1}</td>
     <td style="font-family:var(--font-cond);font-weight:700;color:#e74c3c">${fmt(e.monto)}</td>
-    <td style="font-size:.8rem;color:var(--text-muted)">${e.cajero||'—'}</td>
+    <td style="font-size:.8rem;color:var(--text-muted)">${e.registradoPor||e.registrado_por||'—'}</td>
     <td><button class="btn btn-danger btn-sm" onclick="eliminarConsumo(${e.id})">🗑</button></td>
   </tr>`).join('');
 }
@@ -3382,7 +3498,7 @@ async function renderGiftcards(){
   const gcs=await dbAll('giftcards');
   const cl=await dbAll('clientes');
   const cobros=await dbAll('cobros');
-  const cMap={};cl.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
 
   const disp=gcs.filter(g=>g.estado==='disponible');
   const vig=gcs.filter(g=>g.estado==='vigente');
@@ -3408,7 +3524,7 @@ async function renderGiftcards(){
     const etiqueta={disponible:'🟢 Disponible',vigente:'🟡 Vigente',canjeada:'⚫ Canjeada'}[g.estado]||g.estado;
     return `<tr>
       <td><strong style="font-family:var(--font-cond);letter-spacing:1px">${g.codigo}</strong></td>
-      <td>${cMap[g.clienteId]||'<span style="color:var(--text-dim)">—</span>'}</td>
+      <td>${cMap[String(g.clienteId||g.cliente_id||'')]||'<span style="color:var(--text-dim)">—</span>'}</td>
       <td style="font-family:var(--font-cond);font-weight:700">${fmt(g.valor)}</td>
       <td style="color:${consumido>0?'#e74c3c':'var(--text-dim)'}">${fmt(consumido)}</td>
       <td style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${fmt(g.saldo!==undefined?g.saldo:g.valor)}</td>
@@ -3443,9 +3559,9 @@ async function guardarGiftcard(){
 
 async function verDetalleGiftcard(id){
   const g=await dbGet('giftcards',id);if(!g)return;
-  const cl=await dbAll('clientes');const cMap={};cl.forEach(c=>cMap[c.id]=c.nombre+' '+c.apellido);
+  const cl=await dbAll('clientes');const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
   const cobros=await dbAll('cobros');
-  const cobrosGC=cobros.filter(co=>co.giftcardId===id);
+  const cobrosGC=cobros.filter(co=>Number(co.giftcardId||co.giftcard_id)===Number(id));
   const consumido=g.valor-(g.saldo!==undefined?g.saldo:g.valor);
   document.getElementById('gcDetalleContent').innerHTML=`
     <div style="text-align:center;margin-bottom:16px">
@@ -3453,7 +3569,7 @@ async function verDetalleGiftcard(id){
       <div style="font-size:.82rem;color:var(--text-muted)">Emitida el ${fmtD(g.fecha)}</div>
     </div>
     <div class="grid-2" style="gap:12px;margin-bottom:16px">
-      <div><div class="form-label">Cliente</div><div>${cMap[g.clienteId]||'Sin asignar'}</div></div>
+      <div><div class="form-label">Cliente</div><div>${cMap[String(g.clienteId||g.cliente_id||'')]||'Sin asignar'}</div></div>
       <div><div class="form-label">Estado</div><div><span class="badge ${g.estado==='disponible'?'badge-green':g.estado==='vigente'?'badge-gold':'badge-gray'}">${g.estado}</span></div></div>
       <div><div class="form-label">Valor original</div><div style="font-family:var(--font-cond);font-weight:700">${fmt(g.valor)}</div></div>
       <div><div class="form-label">Saldo disponible</div><div style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${fmt(g.saldo!==undefined?g.saldo:g.valor)}</div></div>
@@ -3463,8 +3579,8 @@ async function verDetalleGiftcard(id){
       <table><thead><tr><th>Fecha</th><th>Servicios</th><th>Productos</th><th>Total cobro</th></tr></thead>
       <tbody>${cobrosGC.length?cobrosGC.sort((a,b)=>b.fecha>a.fecha?1:-1).map(co=>`<tr>
         <td>${fmtD(co.fecha)} ${co.hora||''}</td>
-        <td style="font-size:.82rem">${co.items.filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—'}</td>
-        <td style="font-size:.82rem">${co.items.filter(i=>i.tipo==='producto').map(i=>i.nombre).join(', ')||'—'}</td>
+        <td style="font-size:.82rem">${(co.items||[]).filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—'}</td>
+        <td style="font-size:.82rem">${(co.items||[]).filter(i=>i.tipo==='producto').map(i=>i.nombre).join(', ')||'—'}</td>
         <td style="font-family:var(--font-cond);font-weight:700">${fmt(co.total)}</td>
       </tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text-dim)">Sin consumos aún</td></tr>'}
       </tbody></table>
