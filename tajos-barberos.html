@@ -459,6 +459,7 @@ const SUPA_URL='https://tgwhegmgchnttsmrhcfc.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnd2hlZ21nY2hudHRzbXJoY2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODg1ODgsImV4cCI6MjA4OTQ2NDU4OH0.3g20p6yGber_j6HNB5oQqesOm_YgQ_fo9P2Yl2jGPbM';
 
 
+
 const STORE_TABLE={
   barberos:'barberos',clientes:'clientes',servicios:'servicios',productos:'productos',
   turnos:'turnos',cobros:'cobros',usuarios:'usuarios',historial:'historial',
@@ -496,7 +497,20 @@ const SUPA_COLS={
   metodos_pago:new Set(['id','nombre','icono','activo','orden','created_at']),
 };
 function toDbObj(obj,table){const allowed=table?SUPA_COLS[table]:null;const r={};for(const [k,v] of Object.entries(obj)){const dk=FIELD_TO_DB[k]||k;if(allowed&&!allowed.has(dk))continue;r[dk]=(v!==undefined&&v!==null)?v:null;}return r;}
-function fromDbObj(obj){if(!obj)return null;const r={};for(const [k,v] of Object.entries(obj)){const ak=FIELD_FROM_DB[k]||k;r[ak]=v;}if(r.id!==undefined)r.id=Number(r.id);return r;}
+function fromDbObj(obj){
+  if(!obj)return null;
+  const r={};
+  for(const [k,v] of Object.entries(obj)){const ak=FIELD_FROM_DB[k]||k;r[ak]=v;}
+  if(r.id!==undefined)r.id=Number(r.id);
+  // Supabase puede devolver columnas JSONB como string — parsear si es necesario
+  ['pagos','items','detalle','egresosEfectivo','egresos_efectivo','acceso'].forEach(col=>{
+    if(typeof r[col]==='string'){try{r[col]=JSON.parse(r[col]);}catch(e){r[col]=[];}}
+    if(r[col]==null)r[col]=col==='acceso'?{}:[];
+  });
+  if(Array.isArray(r.pagos))r.pagos=r.pagos.map(p=>({...p,monto:parseFloat(p.monto)||0}));
+  if(Array.isArray(r.items))r.items=r.items.map(i=>({...i,precio:parseFloat(i.precio)||0}));
+  return r;
+}
 
 // Conectividad
 let _online=navigator.onLine;
@@ -862,10 +876,10 @@ async function renderServicios(){
   const cobrosFiltered=misCobros.filter(c=>c.fecha===fechaFiltro);
 
   // Stats — comisión calculada sobre ítems de servicio (no sobre total del cobro)
-  const comHoy=cobrosHoy.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').reduce((a,i)=>a+(i.precio||0)*pct,0),0);
-  const cntHoy=cobrosHoy.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').length,0);
-  const comMes=cobrosMes.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').reduce((a,i)=>a+(i.precio||0)*pct,0),0);
-  const cntMes=cobrosMes.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').length,0);
+  const comHoy=cobrosHoy.reduce((s,c)=>s+(c.items||[]).filter(i=>i.tipo==='servicio').reduce((a,i)=>a+(i.precio||0)*pct,0),0);
+  const cntHoy=cobrosHoy.reduce((s,c)=>s+(c.items||[]).filter(i=>i.tipo==='servicio').length,0);
+  const comMes=cobrosMes.reduce((s,c)=>s+(c.items||[]).filter(i=>i.tipo==='servicio').reduce((a,i)=>a+(i.precio||0)*pct,0),0);
+  const cntMes=cobrosMes.reduce((s,c)=>s+(c.items||[]).filter(i=>i.tipo==='servicio').length,0);
   document.getElementById('srvComHoy').textContent=fmt(comHoy);
   document.getElementById('srvCntHoy').textContent=cntHoy;
   document.getElementById('srvComMes').textContent=fmt(comMes);
@@ -878,10 +892,10 @@ async function renderServicios(){
     return;
   }
   tbody.innerHTML=cobrosFiltered.sort((a,b)=>(b.hora||'')>(a.hora||'')?1:-1).map(co=>{
-    const svcs=co.items.filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—';
-    const prods=co.items.filter(i=>i.tipo==='producto').map(i=>i.nombre).join(', ')||'—';
+    const svcs=(co.items||[]).filter(i=>i.tipo==='servicio').map(i=>i.nombre).join(', ')||'—';
+    const prods=(co.items||[]).filter(i=>i.tipo==='producto').map(i=>i.nombre).join(', ')||'—';
     // Comisión = suma de precios de ítems de servicio × pct (no total del cobro)
-    const comision=co.items.filter(i=>i.tipo==='servicio').reduce((a,i)=>a+(i.precio||0)*pct,0);
+    const comision=(co.items||[]).filter(i=>i.tipo==='servicio').reduce((a,i)=>a+(i.precio||0)*pct,0);
     return `<tr>
       <td>${fmtD(co.fecha)}</td>
       <td>${co.hora||'—'}</td>
@@ -927,11 +941,11 @@ async function renderReportes(){
   const misAdelantos=adelantos.filter(a=>Number(a.barberoId||a.barbero_id)===bId&&a.estado==='aprobado'&&a.fechaAprobacion&&a.fechaAprobacion>=desde&&a.fechaAprobacion<=hasta);
 
   // Comisiones por servicios
-  const comServ=misCobros.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='servicio').reduce((a,i)=>a+i.precio*pct,0),0);
+  const comServ=misCobros.reduce((s,c)=>s+(c.items||[]).filter(i=>i.tipo==='servicio').reduce((a,i)=>a+i.precio*pct,0),0);
   // Comisiones por productos
   // Solo productos con comisionable===true generan 10% fijo
   const PROD_COMIS_PCT=0.10;
-  const comProd=misCobros.reduce((s,c)=>s+c.items.filter(i=>i.tipo==='producto'&&i.comisionable===true).reduce((a,i)=>a+i.precio*PROD_COMIS_PCT,0),0);
+  const comProd=misCobros.reduce((s,c)=>s+(c.items||[]).filter(i=>i.tipo==='producto'&&i.comisionable===true).reduce((a,i)=>a+i.precio*PROD_COMIS_PCT,0),0);
   // Egresos/consumos
   const totalEgresos=misEgresos.reduce((s,e)=>s+(e.monto||0),0);
   // Adelantos
@@ -949,7 +963,7 @@ async function renderReportes(){
   // Tabla servicios
   const servRows=[];
   misCobros.forEach(co=>{
-    co.items.filter(i=>i.tipo==='servicio').forEach(i=>{
+    (co.items||[]).filter(i=>i.tipo==='servicio').forEach(i=>{
       servRows.push({fecha:co.fecha,nombre:i.nombre,precio:i.precio,comision:i.precio*pct});
     });
   });
@@ -963,7 +977,7 @@ async function renderReportes(){
   // Tabla productos vendidos
   const prodRows=[];
   misCobros.forEach(co=>{
-    co.items.filter(i=>i.tipo==='producto').forEach(i=>{
+    (co.items||[]).filter(i=>i.tipo==='producto').forEach(i=>{
       const comisionProd=i.comisionable===true?(i.precio*PROD_COMIS_PCT):0;
       prodRows.push({fecha:co.fecha,nombre:i.nombre,precio:i.precio,comision:comisionProd,comisionable:i.comisionable===true});
     });
