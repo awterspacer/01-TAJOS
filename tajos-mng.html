@@ -995,9 +995,12 @@ tbody tr:last-child td{border-bottom:none;}
 
 // ══════════════════════════════════════════════════════════════
 // [1] CONFIG & SUPABASE
-const SUPA_URL='https://tgwhegmgchnttsmrhcfc.supabase.co';
+const SUPABASE_URL = "https://czgthvobksmsdkdaemxm.supabase.co";
 
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnd2hlZ21nY2hudHRzbXJoY2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODg1ODgsImV4cCI6MjA4OTQ2NDU4OH0.3g20p6yGber_j6HNB5oQqesOm_YgQ_fo9P2Yl2jGPbM';
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6Z3Rodm9ia3Ntc2RrZGFlbXhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MTU4MjksImV4cCI6MjA5MDQ5MTgyOX0.jph1xOKzKonrjmTgbvopiY3qmXvHpEbvQntg1dd1ljY";
+
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
 
@@ -1159,7 +1162,7 @@ async function syncPending(){
 }
 
 // ══════════════════════════════════════════════════════════════
-// SUPABASE FETCH HELPER
+// [4] SUPABASE FETCH HELPER
 // ══════════════════════════════════════════════════════════════
 async function supaFetch(method,table,query,body,extraHeaders={}){
   const url=`${SUPA_URL}/rest/v1/${table}${query?'?'+query:''}`;
@@ -1170,18 +1173,27 @@ async function supaFetch(method,table,query,body,extraHeaders={}){
     'Prefer':'return=representation',
     ...extraHeaders
   };
-  const res=await fetch(url,{method,headers,body:body?JSON.stringify(body):undefined});
+  
+  const res=await fetch(url,{
+  method,
+  headers,
+  body: body ? JSON.stringify(body) : undefined
+  });
+  
   if(!res.ok){
     const err=await res.text();
     throw new Error(`Supabase ${method} ${table}: ${res.status} ${err}`);
   }
-  if(res.status===204)return null;
-  const data=await res.json();
-  return data;
+  if(res.status===204) return [];
+
+const text = await res.text();
+const data = text ? JSON.parse(text) : [];
+
+return data;
 }
 
 // ══════════════════════════════════════════════════════════════
-// INDEXEDDB (CACHÉ LOCAL / FALLBACK OFFLINE)
+// [5] INDEXEDDB (CACHÉ LOCAL / FALLBACK OFFLINE)
 // ══════════════════════════════════════════════════════════════
 let db;
 const DB_NAME='TajosOS',DB_VER=5;
@@ -1216,7 +1228,7 @@ async function _idbReplaceAll(store, rows){
 }
 
 // ══════════════════════════════════════════════════════════════
-// CAPA HÍBRIDA — API pública (reemplaza dbAll/dbGet/dbAdd/dbPut/dbDel)
+// [6] CAPA HÍBRIDA — API pública (reemplaza dbAll/dbGet/dbAdd/dbPut/dbDel)
 // Prioridad: Supabase → si falla o está offline → IndexedDB
 // ══════════════════════════════════════════════════════════════
 
@@ -1246,7 +1258,7 @@ async function dbGet(store,id){
       }
     }catch(e){console.warn('dbGet Supabase error, usando IndexedDB:',e);}
   }
-  return _idbGet(store,Number(id));
+  return _idbGet(store,id);
 }
 
 async function dbAdd(store,data){
@@ -1256,8 +1268,11 @@ async function dbAdd(store,data){
   if(_online){
     try{
       const rows=await supaFetch('POST',tbl,null,body);
-      if(rows&&rows.length){
-        const saved=fromDbObj(rows[0]);
+
+      const row = Array.isArray(rows) ? rows[0] : rows;
+
+      if(row){
+  const saved=fromDbObj(row);
         // Supabase guardó correctamente — solo actualizar cache local, NO encolar offline
         _idbAdd(store,saved).catch(()=>{});
         return saved.id;
@@ -1279,7 +1294,11 @@ async function dbPut(store,data){
   delete body.id;
   if(_online){
     try{
-      await supaFetch('PATCH',tbl,`id=eq.${data.id}`,body);
+      const rows = await supaFetch('PATCH',tbl,`id=eq.${data.id}`,body);
+
+      if(!rows || rows.length===0){
+  throw new Error('Update no afectó filas');
+      }
       _idbPut(store,data).catch(()=>{});
       return;
     }catch(e){console.warn('dbPut Supabase error, guardando offline:',e);}
@@ -1292,7 +1311,11 @@ async function dbDel(store,id){
   const tbl=STORE_TABLE[store]||store;
   if(_online){
     try{
-      await supaFetch('DELETE',tbl,`id=eq.${id}`);
+      const rows = await supaFetch('DELETE',tbl,`id=eq.${id}`);
+
+      if(rows && rows.length===0){
+  throw new Error('Delete no afectó filas');
+      }
       _idbDel(store,id).catch(()=>{});
       return;
     }catch(e){console.warn('dbDel Supabase error, borrando offline:',e);}
