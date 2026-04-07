@@ -277,6 +277,7 @@ tbody tr:last-child td{border-bottom:none;}
   <div class="nav-item admin-only" data-page="barberos"><span class="icon">💈</span>Barberos</div>
   <div class="nav-item" data-page="servicios"><span class="icon">🗂</span>Catálogo</div>
   <div class="nav-item" data-page="consumos"><span class="icon">🧴</span>Consumos</div>
+  <div class="nav-item admin-only" data-page="inventario"><span class="icon">📦</span>Inventario</div>
   <div class="sidebar-section-label admin-only">Admin</div>
   <div class="nav-item admin-only" data-page="usuarios"><span class="icon">🔐</span>Usuarios</div>
   <div class="nav-item admin-only" data-page="historial"><span class="icon">📜</span>Historial</div>
@@ -574,6 +575,34 @@ tbody tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+
+<!-- INVENTARIO -->
+<div class="page" id="page-inventario">
+  <div class="section-header">
+    <div><div class="section-title">INVENTARIO</div><div class="section-sub">Stock de productos por sucursal</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select class="form-control" id="invFiltroLocal" style="width:160px" onchange="renderInventario()">
+        <option value="0">Ambas sucursales</option>
+        <option value="1">Central</option>
+        <option value="2">Superseis</option>
+      </select>
+      <select class="form-control" id="invFiltroCategoria" style="width:180px" onchange="renderInventario()">
+        <option value="">Todas las categorías</option>
+      </select>
+      <button class="btn btn-outline" onclick="exportarInventarioXLSX()">📊 Exportar XLSX</button>
+      <button class="btn btn-outline" onclick="exportarInventarioPDF()">🖨 Exportar PDF</button>
+    </div>
+  </div>
+  <div class="grid-4" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-label">Total productos</div><div class="stat-value" id="invStatTotal">0</div><div class="stat-icon">📦</div></div>
+    <div class="stat-card"><div class="stat-label">Sin stock (sucursal)</div><div class="stat-value" id="invStatSinStock" style="color:var(--danger)">0</div><div class="stat-icon">⚠</div></div>
+    <div class="stat-card"><div class="stat-label">Stock bajo (sucursal)</div><div class="stat-value" id="invStatBajo" style="color:#e67e22">0</div><div class="stat-icon">📉</div></div>
+    <div class="stat-card"><div class="stat-label">Valor total inventario</div><div class="stat-value" id="invStatValor" style="font-size:1.4rem">Gs. 0</div><div class="stat-icon">💰</div></div>
+  </div>
+  <div class="card">
+    <div id="invContenido"></div>
+  </div>
+</div>
 
 <!-- GIFTCARDS -->
 <div class="page" id="page-giftcards">
@@ -1000,7 +1029,6 @@ const SUPA_URL='https://tgwhegmgchnttsmrhcfc.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnd2hlZ21nY2hudHRzbXJoY2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODg1ODgsImV4cCI6MjA4OTQ2NDU4OH0.3g20p6yGber_j6HNB5oQqesOm_YgQ_fo9P2Yl2jGPbM';
 
 
-
 // ══════════════════════════════════════════════════════════════
 // MAPA: nombre de store (IndexedDB) → nombre de tabla (Supabase)
 // Los nombres en snake_case corresponden al schema SQL generado.
@@ -1039,6 +1067,7 @@ const FIELD_TO_DB = {
   barberoNombre:'barbero_nombre', clienteNombre:'cliente_nombre',
   registradoPor:'registrado_por', createdAt:'created_at',
   giftcardId:'giftcard_id',
+  stockCentral:'stock_central', stockSuperseis:'stock_superseis',
   // Arqueos
   turnoLabel:'turno_label',
   cajaInicial:'caja_inicial',
@@ -1057,7 +1086,7 @@ const SUPA_COLS={
   barbero_users:new Set(['id','barbero_id','login','pin','activo','ultimo_acceso','created_at']),
   clientes:new Set(['id','nombre','apellido','documento','celular','email','notas','created_at','updated_at']),
   servicios:new Set(['id','nombre','precio','duracion','categoria','descripcion','comision','activo','created_at','updated_at']),
-  productos:new Set(['id','nombre','precio','stock','categoria','descripcion','comisionable','activo','created_at','updated_at']),
+  productos:new Set(['id','nombre','precio','stock','stock_central','stock_superseis','categoria','descripcion','comisionable','activo','created_at','updated_at']),
   turnos:new Set(['id','cliente_id','cliente_nombre','barbero_id','fecha','hora','local','servicios','notas','estado','created_at','updated_at']),
   usuarios:new Set(['id','login','password','nombre','apellido','email','rol','estado','acceso','ultimo_acceso','created_at','updated_at']),
   historial:new Set(['id','usuario','nombre','rol','accion','fecha','hora','ts']),
@@ -1302,7 +1331,7 @@ async function dbDel(store,id){
 }
 
 // ══ STATE ══
-const ST={localActivo:1,agendaFecha:new Date(),turnoServTemp:[],cobroItems:[],cobroPagos:[],user:null,_gcAplicada:null,_pendingServCat:null,_pendingProdCat:null,turnoActivo:null};
+const ST={localActivo:1,agendaFecha:new Date(),turnoServTemp:[],cobroItems:[],cobroPagos:[],user:null,_gcAplicada:null,_pendingServCat:null,_pendingProdCat:null};
 const HORAS=[];for(let h=8;h<=20;h++){HORAS.push(String(h).padStart(2,'0')+':00');if(h<20)HORAS.push(String(h).padStart(2,'0')+':30');}
 // METODOS: fallback hardcodeado con IDs descriptivos (siempre se usan como clave en cobros)
 const METODOS_DEFAULT=[
@@ -1315,6 +1344,26 @@ const METODOS_DEFAULT=[
   {id:'giftcard',     label:'Giftcard',     icon:'🎁'},
 ];
 let METODOS=[...METODOS_DEFAULT];
+
+// ══ HELPERS DE STOCK POR SUCURSAL ══
+// El stock se divide en stockCentral y stockSuperseis.
+// Estas funciones leen/escriben el campo correcto según ST.localActivo.
+function getStockLocal(p, local){
+  const l=Number(local||ST.localActivo);
+  if(l===1) return Number(p.stockCentral??p.stock_central??p.stock??0);
+  if(l===2) return Number(p.stockSuperseis??p.stock_superseis??0);
+  return Number(p.stock??0);
+}
+function setStockLocal(p, cantidad, local){
+  const l=Number(local||ST.localActivo);
+  if(l===1) p.stockCentral=cantidad;
+  else if(l===2) p.stockSuperseis=cantidad;
+  else p.stock=cantidad;
+  return p;
+}
+function stockTotalProducto(p){
+  return Number(p.stockCentral??p.stock_central??0)+Number(p.stockSuperseis??p.stock_superseis??0);
+}
 
 async function cargarMetodos(){
   try{
@@ -1379,10 +1428,7 @@ async function doLogin(){
 }
 
 function showApp(){
-  // Fijar el turno en el momento del login — no cambia por el reloj durante la sesión
-  ST.turnoActivo=new Date().getHours()<14?1:2;
   sessionStorage.setItem('tajos_uid', String(ST.user.id));
-  sessionStorage.setItem('tajos_turno', String(ST.turnoActivo));
   document.getElementById('loginScreen').classList.remove('visible');
   document.getElementById('app').classList.add('visible');
   const u=ST.user;
@@ -1416,7 +1462,7 @@ function showApp(){
   setTimeout(mostrarCajaInicialSiNecesario,600);
 }
 
-function getTurnoLabel(){const t=getTurnoActual();return t===1?'Cajero · Turno 1 (9–14h)':'Cajero · Turno 2 (14–20h)';}
+function getTurnoLabel(){const h=new Date().getHours();return h<14?'Cajero · Turno 1 (8–14h)':'Cajero · Turno 2 (14–20h)';}
 
 // Devuelve array de locales permitidos para el usuario actual.
 // Admin → [1,2]. Cajero ambas → [1,2]. Cajero solo central → [1]. Cajero solo superseis → [2].
@@ -1461,9 +1507,7 @@ async function logoutConfirm(){await showRecordatorioBackup();}
 async function doLogout(){
   await logAct('Cierre de sesión');
   ST.user=null;
-  ST.turnoActivo=null;
   sessionStorage.removeItem('tajos_uid');
-  sessionStorage.removeItem('tajos_turno');
   document.getElementById('app').classList.remove('visible');
   document.getElementById('loginScreen').classList.add('visible');
   document.getElementById('loginUser').value='';
@@ -1477,7 +1521,7 @@ async function logAct(accion){
 }
 
 // ══ NAVIGATION ══
-const TITLES={dashboard:'Dashboard',agenda:'Agenda',caja:'Caja',clientes:'Clientes',barberos:'Barberos',servicios:'Catálogo',usuarios:'Usuarios',historial:'Historial',arqueos:'Arqueos',reportes:'Reportes'};
+const TITLES={dashboard:'Dashboard',agenda:'Agenda',caja:'Caja',clientes:'Clientes',barberos:'Barberos',servicios:'Catálogo',usuarios:'Usuarios',historial:'Historial',arqueos:'Arqueos',reportes:'Reportes',inventario:'Inventario'};
 document.querySelectorAll('.nav-item[data-page]').forEach(el=>el.addEventListener('click',()=>{navigate(el.dataset.page);closeSidebar();}));
 
 function navigate(page){
@@ -1499,6 +1543,7 @@ function navigate(page){
   if(page==='reportes'){_aplicarRestriccionReporteLocal();generarReporte();}
   if(page==='giftcards')renderGiftcards();
   if(page==='consumos')renderConsumos();
+  if(page==='inventario')renderInventario();
 }
 
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('visible');}
@@ -1778,7 +1823,8 @@ async function renderCatalogo(){
   </div>`).join(''):'<div class="empty-state" style="grid-column:1/-1"><div class="icon">🪓</div><p>No hay servicios</p></div>';
 
   document.getElementById('productosList').innerHTML=prods.length?prods.map(p=>{
-    const sc=p.stock<=0?'stock-out':p.stock<5?'stock-low':'stock-ok';
+    const stockLocal=getStockLocal(p);
+    const sc=stockLocal<=0?'stock-out':stockLocal<5?'stock-low':'stock-ok';
     return `<div class="card" style="padding:16px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div style="font-family:var(--font-cond);font-weight:700;font-size:.95rem">${p.nombre}</div>
@@ -1788,8 +1834,9 @@ async function renderCatalogo(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         ${p.categoria?`<span class="badge badge-gray" style="font-size:.7rem">${p.categoria}</span>`:''}
         ${p.comisionable?`<span class="badge badge-green" style="font-size:.7rem">&#10003; Comisionable 10%</span>`:''}
-        <span style="font-size:.78rem;color:var(--text-muted)">Stock:</span>
-        <span class="stock-badge ${sc}">${p.stock??0}</span>
+        <span style="font-size:.78rem;color:var(--text-muted)">${localNombre(ST.localActivo)}:</span>
+        <span class="stock-badge ${sc}">${stockLocal}</span>
+        <span style="font-size:.72rem;color:var(--text-dim)">| Total: ${stockTotalProducto(p)}</span>
       </div>
       <div class="divider" style="margin:10px 0"></div>
       <div style="display:flex;gap:6px">
@@ -1875,9 +1922,12 @@ async function ingresarStock(){
   const cant=+document.getElementById('stockCantidad').value||0;
   const notas=document.getElementById('stockNotas').value.trim();
   if(!prodId||cant<=0)return toast('Selecciona producto y cantidad válida','error');
-  const p=await dbGet('productos',prodId);p.stock=(p.stock||0)+cant;await dbPut('productos',p);
-  await logAct(`Ingresó ${cant} unidades de "${p.nombre}" al stock${notas?' ('+notas+')':''}`);
-  toast(`Stock de "${p.nombre}" → ${p.stock} u.`,'success');
+  const p=await dbGet('productos',prodId);
+  const stockActual=getStockLocal(p);
+  setStockLocal(p, stockActual+cant);
+  await dbPut('productos',p);
+  await logAct(`Ingresó ${cant} u. de "${p.nombre}" en ${localNombre(ST.localActivo)}${notas?' ('+notas+')':''}`);
+  toast(`Stock de "${p.nombre}" en ${localNombre(ST.localActivo)} → ${stockActual+cant} u.`,'success');
   closeModal('modalIngresoProducto');renderCatalogo();populateSels();
 }
 // ══ CLIENTES ══
@@ -2373,7 +2423,11 @@ async function guardarCobro(){
   for(const item of ST.cobroItems){
     if(item.tipo==='producto'&&item.id){
       const p=await dbGet('productos',item.id);
-      if(p&&(p.stock||0)>0){p.stock=Math.max(0,p.stock-1);await dbPut('productos',p);}
+      if(p){
+        const stk=getStockLocal(p);
+        if(stk>0) setStockLocal(p, Math.max(0,stk-1));
+        await dbPut('productos',p);
+      }
     }
   }
   const facturaAmt=parseFloat(document.getElementById('cobroFactura')?.value)||0;
@@ -2504,7 +2558,7 @@ async function renderArqueo(){
   const td=hoy();const cobros=await dbAll('cobros');
   const isAdmin=ST.user?.rol==='admin';
   const turno=getTurnoActual();
-  const turnoLabel=turno===1?'Turno 1 (9–14h)':'Turno 2 (14–20h)';
+  const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
   const h=cobros.filter(c=>c.fecha===td&&Number(c.local)===Number(ST.localActivo));
   const arqs=await dbAll('arqueos');
   const aqActual=arqs.find(a=>a.fecha===td&&Number(a.local)===Number(ST.localActivo)&&a.turno==turno)||{notas:'',turno,cerrado:false};
@@ -2535,7 +2589,7 @@ async function renderArqueo(){
         // Leer caja inicial y egresos desde caja_turnos (fuente de verdad)
         const ctA=await getCajaTurno(td,a.local,a.turno)||{cajaInicial:0,egresosEfectivo:[]};
         const ini=ctA.cajaInicial||ctA.caja_inicial||0;
-        const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1 (9–14h)':'Turno 2 (14–20h)');
+        const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1 (8–14h)':'Turno 2 (14–20h)');
         const verif=a.verificado;
         const egEf=ctA.egresosEfectivo||[];
         const totEgEf=egEf.reduce((s,e)=>s+(e.monto||0),0);
@@ -3684,10 +3738,8 @@ async function buscarYAplicarGiftcard(){
 
 // ══ CAJA INICIAL ══
 function getTurnoActual(){
-  // El turno se fija al iniciar sesión (ST.turnoActivo) y no cambia por el reloj.
-  // Solo se recalcula si no hay sesión activa (ej: primera carga).
-  if(ST.turnoActivo) return ST.turnoActivo;
-  return new Date().getHours()<14?1:2;
+  const h=new Date().getHours();
+  return h<14?1:2;
 }
 // ══════════════════════════════════════════════════════════════
 // [31] CAJA INICIAL — tabla caja_turnos separada de arqueos
@@ -3739,7 +3791,7 @@ async function mostrarCajaInicialSiNecesario(){
     localStorage.setItem(key,'done');return;
   }
   const info=document.getElementById('cajaInicialInfo');
-  const turnoLabel=turno===1?'Turno 1 (9–14h)':'Turno 2 (14–20h)';
+  const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
   if(info)info.textContent=localNombre(ST.localActivo)+' · '+turnoLabel+' · '+hoy();
   const el=document.getElementById('modalCajaInicial');
   if(el)el.classList.add('visible');
@@ -3761,6 +3813,185 @@ function omitirCajaInicial(){
   document.getElementById('modalCajaInicial').classList.remove('visible');
 }
 
+// ══ INVENTARIO ══
+async function renderInventario(){
+  const prods=await dbAll('productos');
+  const lf=+document.getElementById('invFiltroLocal')?.value||0;
+  const catF=document.getElementById('invFiltroCategoria')?.value||'';
+
+  // Poblar selector de categorías
+  const cats=[...new Set(prods.map(p=>p.categoria||'Sin categoría').filter(Boolean))].sort();
+  const catSel=document.getElementById('invFiltroCategoria');
+  if(catSel){
+    const cur=catSel.value;
+    catSel.innerHTML='<option value="">Todas las categorías</option>'+
+      cats.map(c=>`<option value="${c}"${c===cur?' selected':''}>${c}</option>`).join('');
+  }
+
+  // Filtrar por categoría
+  let lista=prods.filter(p=>p.activo!==false);
+  if(catF)lista=lista.filter(p=>(p.categoria||'Sin categoría')===catF);
+
+  // Ordenar: categoría → nombre
+  lista.sort((a,b)=>{
+    const ca=(a.categoria||'Sin categoría').localeCompare(b.categoria||'Sin categoría','es');
+    return ca!==0?ca:a.nombre.localeCompare(b.nombre,'es');
+  });
+
+  // Función de stock según filtro de local
+  const getStock=p=>{
+    if(lf===1)return getStockLocal(p,1);
+    if(lf===2)return getStockLocal(p,2);
+    return stockTotalProducto(p);
+  };
+
+  // Stats
+  const sinStock=lista.filter(p=>getStock(p)<=0).length;
+  const bajo=lista.filter(p=>getStock(p)>0&&getStock(p)<5).length;
+  const valorTotal=lista.reduce((s,p)=>s+getStock(p)*p.precio,0);
+  document.getElementById('invStatTotal').textContent=lista.length;
+  document.getElementById('invStatSinStock').textContent=sinStock;
+  document.getElementById('invStatBajo').textContent=bajo;
+  document.getElementById('invStatValor').textContent=fmt(valorTotal);
+
+  if(!lista.length){
+    document.getElementById('invContenido').innerHTML='<div class="empty-state"><div class="icon">📦</div><p>No hay productos</p></div>';
+    return;
+  }
+
+  // Agrupar por categoría
+  const grupos={};
+  lista.forEach(p=>{
+    const cat=p.categoria||'Sin categoría';
+    if(!grupos[cat])grupos[cat]=[];
+    grupos[cat].push(p);
+  });
+
+  const localHeader=lf===0?'<th>Central</th><th>Superseis</th><th>Total</th>':'<th>Stock</th>';
+
+  document.getElementById('invContenido').innerHTML=Object.entries(grupos).map(([cat,items])=>`
+    <div style="margin-bottom:28px">
+      <div style="font-family:var(--font-cond);font-size:.8rem;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;padding:8px 0 6px;border-bottom:1px solid var(--border-strong);margin-bottom:8px">${cat}</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Producto</th><th>Precio</th>${localHeader}<th>Valor</th><th>Estado</th></tr></thead>
+          <tbody>
+            ${items.map(p=>{
+              const c1=getStockLocal(p,1),c2=getStockLocal(p,2),tot=stockTotalProducto(p);
+              const stk=lf===0?tot:lf===1?c1:c2;
+              const sc=stk<=0?'stock-out':stk<5?'stock-low':'stock-ok';
+              const stockCols=lf===0
+                ?`<td style="font-family:var(--font-cond);font-weight:700;text-align:center">${c1}</td><td style="font-family:var(--font-cond);font-weight:700;text-align:center">${c2}</td><td style="font-family:var(--font-cond);font-weight:700;text-align:center">${tot}</td>`
+                :`<td style="font-family:var(--font-cond);font-weight:700;text-align:center">${stk}</td>`;
+              return `<tr>
+                <td><strong>${p.nombre}</strong>${p.descripcion?`<div style="font-size:.75rem;color:var(--text-muted)">${p.descripcion}</div>`:''}</td>
+                <td style="font-family:var(--font-cond);color:var(--text-muted)">${fmt(p.precio)}</td>
+                ${stockCols}
+                <td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(stk*p.precio)}</td>
+                <td><span class="stock-badge ${sc}">${stk<=0?'Sin stock':stk<5?'Stock bajo':'OK'}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`).join('');
+}
+
+// ── Exportar XLSX ──
+async function exportarInventarioXLSX(){
+  const prods=(await dbAll('productos')).filter(p=>p.activo!==false)
+    .sort((a,b)=>{const c=(a.categoria||'').localeCompare(b.categoria||'','es');return c!==0?c:a.nombre.localeCompare(b.nombre,'es');});
+  const lf=+document.getElementById('invFiltroLocal')?.value||0;
+
+  // Construir CSV que Excel abre perfectamente
+  const fmtN=n=>Math.round(n);
+  const rows=[
+    ['INVENTARIO TAJOS','','','','','',''],
+    [`Generado: ${new Date().toLocaleString('es-PY')}`,'','','','','',''],
+    [''],
+    ['Categoría','Producto','Descripción','Precio (Gs.)','Central','Superseis','Total','Valor (Gs.)'],
+  ];
+  let catActual='';
+  prods.forEach(p=>{
+    const cat=p.categoria||'Sin categoría';
+    if(cat!==catActual){rows.push([cat,'','','','','','','']);catActual=cat;}
+    const c1=getStockLocal(p,1),c2=getStockLocal(p,2),tot=c1+c2;
+    rows.push(['',p.nombre,p.descripcion||'',fmtN(p.precio),c1,c2,tot,fmtN(tot*p.precio)]);
+  });
+
+  // Totales
+  rows.push(['']);
+  const totVal=prods.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0);
+  rows.push(['','TOTAL','','','','','',fmtN(totVal)]);
+
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`inventario_tajos_${hoy()}.csv`;
+  a.click();
+  toast('Inventario exportado como CSV (compatible con Excel)','success');
+}
+
+// ── Exportar PDF (ventana de impresión) ──
+async function exportarInventarioPDF(){
+  const prods=(await dbAll('productos')).filter(p=>p.activo!==false)
+    .sort((a,b)=>{const c=(a.categoria||'').localeCompare(b.categoria||'','es');return c!==0?c:a.nombre.localeCompare(b.nombre,'es');});
+  const lf=+document.getElementById('invFiltroLocal')?.value||0;
+  const localLabel=lf===0?'Todas las sucursales':localNombre(lf);
+
+  const grupos={};
+  prods.forEach(p=>{const cat=p.categoria||'Sin categoría';if(!grupos[cat])grupos[cat]=[];grupos[cat].push(p);});
+
+  const colHeaders=lf===0
+    ?'<th>Central</th><th>Superseis</th><th>Total</th>'
+    :`<th>Stock (${localLabel})</th>`;
+
+  const tablas=Object.entries(grupos).map(([cat,items])=>`
+    <h3 style="margin:18px 0 6px;font-size:11pt;color:#1a3a6b;border-bottom:1px solid #c5d0e0;padding-bottom:4px">${cat}</h3>
+    <table>
+      <thead><tr><th>Producto</th><th>Precio</th>${colHeaders}<th>Valor</th></tr></thead>
+      <tbody>
+        ${items.map(p=>{
+          const c1=getStockLocal(p,1),c2=getStockLocal(p,2),tot=c1+c2;
+          const stk=lf===0?tot:lf===1?c1:c2;
+          const stockCols=lf===0
+            ?`<td>${c1}</td><td>${c2}</td><td><strong>${tot}</strong></td>`
+            :`<td><strong>${stk}</strong></td>`;
+          return `<tr><td>${p.nombre}</td><td>${fmt(p.precio)}</td>${stockCols}<td>${fmt(stk*p.precio)}</td></tr>`;
+        }).join('')}
+      </tbody>
+    </table>`).join('');
+
+  const totVal=prods.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Inventario TAJOS — ${hoy()}</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:10pt;color:#1a1a2e;margin:24px}
+    h1{font-size:16pt;color:#1a3a6b;margin-bottom:4px}
+    .sub{font-size:9pt;color:#666;margin-bottom:20px}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9pt}
+    th{background:#1a3a6b;color:#fff;padding:5px 8px;text-align:left}
+    td{padding:4px 8px;border-bottom:1px solid #e0e6f0}
+    tr:nth-child(even) td{background:#f4f7fc}
+    .total{font-weight:700;border-top:2px solid #1a3a6b}
+    @media print{body{margin:12px}}
+  </style></head><body>
+  <h1>📦 Inventario TAJOS</h1>
+  <div class="sub">${localLabel} · Generado: ${new Date().toLocaleString('es-PY')}</div>
+  ${tablas}
+  <table style="margin-top:16px"><tbody>
+    <tr class="total"><td colspan="${lf===0?4:3}"><strong>VALOR TOTAL INVENTARIO</strong></td><td><strong>${fmt(totVal)}</strong></td></tr>
+  </tbody></table>
+  </body></html>`;
+
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(),400);
+}
+
 // ══ INIT ══
 initDB().then(async()=>{
   await cargarMetodos();
@@ -3772,15 +4003,9 @@ initDB().then(async()=>{
   if(savedUId){
     try{
       const u=await dbGet('usuarios',savedUId);
-      if(u&&u.estado==='activo'){
-        ST.user=u;
-        // Restaurar el turno que estaba activo al hacer login (no recalcular por hora)
-        const savedTurno=sessionStorage.getItem('tajos_turno');
-        if(savedTurno) ST.turnoActivo=Number(savedTurno);
-        showApp();
-      }
-      else{sessionStorage.removeItem('tajos_uid');sessionStorage.removeItem('tajos_turno');}
-    }catch(e){sessionStorage.removeItem('tajos_uid');sessionStorage.removeItem('tajos_turno');}
+      if(u&&u.estado==='activo'){ST.user=u;showApp();}
+      else{sessionStorage.removeItem('tajos_uid');}
+    }catch(e){sessionStorage.removeItem('tajos_uid');}
   }
 }).catch(err=>{
   console.error('DB Error:',err);
