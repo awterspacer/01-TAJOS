@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAJOS BARBEROS — Forjando al caballero perfecto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #fdd835;
+    --gold-dim: rgba(253,216,53,0.15);
+    --gold-border: rgba(253,216,53,0.25);
+    --bg: #0d1421;
+    --card: #1a2332;
+    --card-80: rgba(26,35,50,0.85);
+    --card-95: rgba(26,35,50,0.97);
+    --text: #ffffff;
+    --muted: #9aa3b2;
+    --green: #059669;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── BG ── */
+  .bg-fixed {
+    position: fixed; inset: 0; z-index: -1;
+    background: url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=1800&q=80') center/cover no-repeat;
+  }
+  .bg-fixed::after {
+    content:''; position:absolute; inset:0;
+    background: rgba(13,20,33,0.88);
+  }
+
+  /* ── NAV ── */
+  .nav {
+    position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+    z-index: 50; display: flex; align-items: center; gap: 6px;
+    background: var(--card-80); backdrop-filter: blur(12px);
+    border: 1px solid rgba(253,216,53,0.45);
+    border-radius: 999px; padding: 6px 8px;
+    white-space: nowrap;
+  }
+  .nav-items { display: flex; gap: 4px; }
+  .nav-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text); font-family: 'Lato', sans-serif;
+    font-size: 13px; padding: 6px 14px; border-radius: 999px;
+    transition: all .25s; letter-spacing: .04em;
+  }
+  .nav-btn:hover, .nav-btn.active { background: var(--gold); color: var(--bg); font-weight: 700; }
+  .nav-menu-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--gold); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: transform .2s;
+  }
+  .nav-menu-btn:hover { transform: scale(1.08); }
+  .nav-menu-btn svg { width: 16px; height: 16px; stroke: var(--bg); fill:none; stroke-width:2.5; stroke-linecap:round; }
+
+  @media(max-width:767px){
+    .nav-items .nav-btn:nth-child(n+4){ display:none; }
+  }
+
+  /* ── DROPDOWN ── */
+  .dropdown {
+    position: fixed; top: 72px; right: 20px; z-index: 45;
+    background: var(--card-95); backdrop-filter: blur(16px);
+    border: 1px solid rgba(253,216,53,0.45); border-radius: 12px;
+    padding: 18px; min-width: 240px;
+    transform: translateY(-8px) scale(.97); opacity: 0;
+    pointer-events: none; transition: all .25s;
+  }
+  .dropdown.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+  .dropdown h4 { color: var(--gold); font-family: 'Cinzel',serif; font-size:13px; letter-spacing:.1em; margin-bottom:12px; }
+  .dd-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; background: none; border: none;
+    color: var(--text); font-family:'Lato',sans-serif; font-size:13px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    transition: all .2s; text-align: left;
+  }
+  .dd-item:hover { background: var(--gold-dim); color: var(--gold); }
+  .dd-item svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; }
+  .overlay {
+    position: fixed; inset: 0; z-index: 40;
+    background: rgba(0,0,0,.3); opacity: 0; pointer-events:none; transition: opacity .2s;
+  }
+  .overlay.open { opacity:1; pointer-events:all; }
+
+  /* ── SECTIONS ── */
+  section { padding: 80px 20px; position: relative; }
+
+  .container { max-width: 1152px; margin: 0 auto; }
+
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: var(--gold); text-align: center;
+    letter-spacing: .08em; margin-bottom: 48px;
+  }
+
+  /* ── HERO ── */
+  #home {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 80px 20px;
+  }
+  .hero-logo {
+    width: 110px; height: 110px; margin-bottom: 32px;
+    background: var(--gold); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family:'Cinzel',serif; font-size: 28px; font-weight:700; color: var(--bg);
+    box-shadow: 0 0 40px rgba(253,216,53,0.4);
+    animation: logoPulse 3s ease-in-out infinite;
+  }
+  @keyframes logoPulse {
+    0%,100%{ box-shadow: 0 0 40px rgba(253,216,53,0.4); }
+    50%{ box-shadow: 0 0 70px rgba(253,216,53,0.7); }
+  }
+  .hero-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3.5rem, 12vw, 8rem);
+    font-weight: 700; color: var(--gold);
+    letter-spacing: .18em; line-height: 1;
+    animation: fadeUp .8s ease both;
+  }
+  .hero-sub {
+    font-family:'Cinzel',serif;
+    font-size: clamp(1rem,3vw, 1.5rem);
+    font-weight:400; letter-spacing:.4em;
+    color:rgba(253,216,53,.6); margin-bottom:24px;
+    animation: fadeUp .8s .15s ease both;
+  }
+  .hero-tagline {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: rgba(255,255,255,.85); max-width: 540px;
+    font-family:'Cormorant Garamond',serif; font-style:italic;
+    font-size:1.3rem; line-height:1.7;
+    animation: fadeUp .8s .3s ease both;
+  }
+  .hero-cta {
+    margin-top: 40px; display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    animation: fadeUp .8s .45s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(20px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    background: var(--gold); color: var(--bg);
+    font-family:'Cinzel',serif; font-size:13px; letter-spacing:.1em;
+    padding: 14px 32px; border-radius: 8px; border: none; cursor:pointer;
+    font-weight: 600; transition: all .25s;
+  }
+  .btn-primary:hover { opacity:.88; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(253,216,53,.3); }
+  .btn-outline {
+    background: transparent; color: var(--gold);
+    font-family:'Cinzel',serif; font-size:13px; letter-spacing:.1em;
+    padding: 14px 32px; border-radius: 8px; border: 1.5px solid var(--gold);
+    cursor:pointer; font-weight:600; transition: all .25s;
+  }
+  .btn-outline:hover { background: var(--gold-dim); transform: translateY(-1px); }
+
+  /* ── BRANDS ── */
+  #brands { background: rgba(26,35,50,.4); backdrop-filter: blur(8px); }
+  .brands-track-wrap { overflow: hidden; }
+  .brands-track {
+    display: flex; gap: 48px; align-items: center;
+    animation: scrollLeft 30s linear infinite;
+    width: max-content;
+  }
+  @keyframes scrollLeft {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .brand-card {
+    width: 130px; height: 70px; flex-shrink:0;
+    background: rgba(255,255,255,.06); backdrop-filter:blur(4px);
+    border: 1px solid var(--gold-border); border-radius:8px;
+    display: flex; align-items:center; justify-content:center;
+    padding:12px; transition: all .3s; cursor:default;
+  }
+  .brand-card:hover { border-color: var(--gold); background: var(--gold-dim); }
+  .brand-card span {
+    font-family:'Cinzel',serif; font-size:11px; letter-spacing:.12em;
+    color: rgba(255,255,255,.55); transition: color .3s; text-align:center;
+    font-weight:600; text-transform: uppercase;
+  }
+  .brand-card:hover span { color: var(--gold); }
+  .brands-desc { text-align:center; color:var(--muted); font-size:14px; margin-top:28px; font-style:italic; }
+
+  /* ── GALLERY ── */
+  .gallery-viewport { overflow: hidden; }
+  .gallery-track {
+    display: flex; gap: 20px;
+    transition: transform .5s cubic-bezier(.4,0,.2,1);
+  }
+  .gallery-slide {
+    flex: 0 0 calc(33.333% - 14px);
+    border-radius: 10px; overflow:hidden;
+    border: 1px solid var(--gold-border);
+    position:relative; cursor:pointer;
+    transition: border-color .3s;
+  }
+  .gallery-slide:hover { border-color: var(--gold); }
+  @media(max-width:900px){ .gallery-slide{ flex: 0 0 calc(50% - 10px); } }
+  @media(max-width:600px){ .gallery-slide{ flex: 0 0 100%; } }
+  .gallery-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; transition: transform .4s; }
+  .gallery-slide:hover .gallery-img { transform: scale(1.05); }
+  .gallery-overlay {
+    position:absolute; inset:0;
+    background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.2) 50%, transparent 100%);
+  }
+  .gallery-text { position:absolute; bottom:0; left:0; right:0; padding:20px; }
+  .gallery-text h3 { font-family:'Cinzel',serif; color:var(--gold); font-size:1rem; letter-spacing:.06em; margin-bottom:6px; }
+  .gallery-text p  { color:rgba(255,255,255,.8); font-size:.85rem; line-height:1.5; }
+  .gallery-nav { display:flex; justify-content:center; gap:10px; margin-top:24px; }
+  .gallery-arrow {
+    width:40px; height:40px; border-radius:50%; background:var(--gold);
+    border:none; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition: opacity .2s;
+  }
+  .gallery-arrow:hover { opacity:.8; }
+  .gallery-arrow svg { width:16px; height:16px; stroke:var(--bg); fill:none; stroke-width:2.5; }
+
+  /* ── TESTIMONIALS ── */
+  #testimonials { background: rgba(13,20,33,.5); }
+  .testimonials-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:28px; }
+  .testi-card {
+    background: var(--card-80); backdrop-filter:blur(10px);
+    border:1px solid rgba(253,216,53,.45); border-radius:12px;
+    padding:28px; transition: border-color .3s, transform .3s;
+  }
+  .testi-card:hover { border-color:var(--gold); transform: translateY(-3px); }
+  .stars { display:flex; gap:4px; margin-bottom:16px; }
+  .star { color:var(--gold); font-size:16px; }
+  .testi-quote {
+    font-family:'Cormorant Garamond',serif; font-style:italic;
+    font-size:1.05rem; line-height:1.7; color:rgba(255,255,255,.85);
+    margin-bottom:22px;
+  }
+  .testi-client { display:flex; align-items:center; gap:12px; }
+  .testi-avatar {
+    width:46px; height:46px; border-radius:50%;
+    background: var(--gold); display:flex; align-items:center; justify-content:center;
+    font-family:'Cinzel',serif; font-weight:700; color:var(--bg); font-size:1rem; flex-shrink:0;
+  }
+  .testi-name { font-family:'Cinzel',serif; color:var(--gold); font-size:.9rem; letter-spacing:.05em; }
+  .testi-role { color:var(--muted); font-size:.8rem; }
+
+  /* ── LOCATIONS ── */
+  .locations-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:28px; }
+  .loc-card {
+    background: var(--card); border:1px solid var(--gold-border);
+    border-radius:12px; overflow:hidden; cursor:pointer;
+    transition: border-color .3s, transform .3s; group: '';
+  }
+  .loc-card:hover { border-color:var(--gold); transform: translateY(-4px); box-shadow:0 16px 40px rgba(0,0,0,.4); }
+  .loc-img-wrap { position:relative; aspect-ratio:16/9; overflow:hidden; }
+  .loc-img { width:100%; height:100%; object-fit:cover; display:block; transition: transform .4s; }
+  .loc-card:hover .loc-img { transform: scale(1.06); }
+  .loc-img-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(26,35,50,.8) 0%,transparent 60%); }
+  .loc-body { padding:22px; }
+  .loc-name { font-family:'Cinzel',serif; color:var(--gold); font-size:1.1rem; letter-spacing:.08em; margin-bottom:8px; }
+  .loc-addr { display:flex; align-items:flex-start; gap:8px; color:rgba(255,255,255,.75); font-size:.85rem; }
+  .loc-addr svg { width:14px; height:14px; stroke:var(--gold); fill:none; stroke-width:2; flex-shrink:0; margin-top:2px; }
+  .loc-badge {
+    display:inline-block; background:var(--gold-dim); color:var(--gold);
+    font-family:'Cinzel',serif; font-size:.7rem; letter-spacing:.1em;
+    padding:3px 10px; border-radius:999px; border:1px solid var(--gold-border); margin-top:10px;
+  }
+
+  /* ── MODAL ── */
+  .modal-backdrop {
+    position:fixed; inset:0; z-index:60;
+    background:rgba(0,0,0,.65); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px; opacity:0; pointer-events:none; transition: opacity .25s;
+  }
+  .modal-backdrop.open { opacity:1; pointer-events:all; }
+  .modal {
+    background: var(--card); border:1px solid rgba(253,216,53,.5);
+    border-radius:14px; max-width:660px; width:100%;
+    max-height:85vh; overflow-y:auto; padding:28px;
+    transform: scale(.95); transition: transform .25s;
+  }
+  .modal-backdrop.open .modal { transform: scale(1); }
+  .modal-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+  .modal-title { font-family:'Cinzel',serif; color:var(--gold); font-size:1.4rem; letter-spacing:.08em; }
+  .modal-close {
+    width:32px; height:32px; border-radius:50%; background:none;
+    border:1px solid var(--gold-border); cursor:pointer; color:var(--muted);
+    display:flex; align-items:center; justify-content:center; transition:.2s;
+  }
+  .modal-close:hover { background:var(--gold-dim); color:var(--gold); }
+  .modal-close svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5; }
+  .modal-gallery { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .modal-gallery img { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:8px; }
+  .modal-desc { color:rgba(255,255,255,.75); font-size:.92rem; line-height:1.7; margin-bottom:20px; }
+  .modal-info { display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+  .modal-info-row { display:flex; align-items:flex-start; gap:10px; font-size:.88rem; color:rgba(255,255,255,.7); }
+  .modal-info-row svg { width:15px; height:15px; stroke:var(--gold); fill:none; stroke-width:2; flex-shrink:0; margin-top:2px; }
+
+  /* ── EVENTS ── */
+  #events { background: rgba(26,35,50,.35); }
+  .events-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:28px; }
+  .event-card {
+    border:1px solid rgba(253,216,53,.4); border-radius:12px;
+    overflow:hidden; position:relative;
+    transition: border-color .3s, transform .3s;
+  }
+  .event-card:hover { border-color:var(--gold); transform: translateY(-4px); }
+  .event-img { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; transition: transform .4s; }
+  .event-card:hover .event-img { transform: scale(1.05); }
+  .event-badge {
+    position:absolute; top:14px; left:14px;
+    display:flex; align-items:center; gap:6px;
+    padding:4px 12px; border-radius:999px; font-size:.75rem; font-family:'Cinzel',serif; letter-spacing:.08em;
+  }
+  .badge-promo { background:var(--green); color:#fff; }
+  .badge-event { background:var(--gold); color:var(--bg); }
+  .event-overlay {
+    position:absolute; inset:0;
+    background:linear-gradient(to top, rgba(0,0,0,.9) 0%, rgba(0,0,0,.1) 55%, transparent 100%);
+  }
+  .event-text { position:absolute; bottom:0; left:0; right:0; padding:22px; }
+  .event-text h3 { font-family:'Cinzel',serif; color:var(--gold); font-size:1rem; letter-spacing:.05em; margin-bottom:8px; }
+  .event-text p  { color:rgba(255,255,255,.8); font-size:.83rem; line-height:1.5; margin-bottom:12px; }
+  .event-meta { display:flex; gap:14px; flex-wrap:wrap; }
+  .event-meta span { display:flex; align-items:center; gap:5px; color:var(--muted); font-size:.75rem; }
+  .event-meta svg { width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2; }
+  .newsletter { text-align:center; margin-top:48px; }
+  .newsletter p { color:var(--muted); font-size:.95rem; margin-bottom:16px; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--card); border-top:1px solid rgba(253,216,53,.3);
+    padding:52px 20px; text-align:center;
+  }
+  .footer-title { font-family:'Cinzel',serif; color:var(--gold); font-size:1.4rem; letter-spacing:.15em; margin-bottom:28px; }
+  .socials { display:flex; justify-content:center; gap:18px; margin-bottom:36px; }
+  .social-btn {
+    width:48px; height:48px; border-radius:50%;
+    background: var(--gold-dim); border:1px solid var(--gold-border);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; text-decoration:none; transition: all .3s;
+  }
+  .social-btn:hover { background:var(--gold); }
+  .social-btn:hover svg { stroke:var(--bg); }
+  .social-btn svg { width:20px; height:20px; stroke:var(--gold); fill:none; stroke-width:1.8; }
+  .footer-sep { border:none; border-top:1px solid rgba(253,216,53,.2); margin:0 0 20px; }
+  .footer-copy { color:var(--muted); font-size:.82rem; letter-spacing:.04em; }
+
+  /* ── FLOATING BUTTON ── */
+  .fab-wrap { position:fixed; bottom:28px; right:28px; z-index:50; }
+  .fab {
+    width:60px; height:60px; border-radius:50%;
+    background:var(--gold); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 20px rgba(253,216,53,.5); transition: all .3s; position:relative;
+  }
+  .fab:hover { transform:scale(1.1); box-shadow:0 8px 30px rgba(253,216,53,.6); }
+  .fab svg { width:24px; height:24px; stroke:var(--bg); fill:none; stroke-width:2.5; }
+  .fab-pulse {
+    position:absolute; top:-2px; right:-2px;
+    width:14px; height:14px; border-radius:50%; background:#ef4444;
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{ transform:scale(1); opacity:1; }
+    50%{ transform:scale(1.5); opacity:.5; }
+  }
+  .fab-tooltip {
+    position:absolute; bottom:68px; right:0;
+    background:var(--card-95); backdrop-filter:blur(8px);
+    border:1px solid var(--gold-border); border-radius:8px;
+    padding:8px 14px; white-space:nowrap; font-size:.8rem; color:var(--text);
+    opacity:0; pointer-events:none; transition: opacity .2s; font-family:'Cinzel',serif; letter-spacing:.08em;
+  }
+  .fab-wrap:hover .fab-tooltip { opacity:1; }
+  .fab-menu {
+    position:absolute; bottom:72px; right:0;
+    background:var(--card-95); backdrop-filter:blur(12px);
+    border:1px solid rgba(253,216,53,.45); border-radius:14px;
+    padding:16px; min-width:220px;
+    transform: translateY(10px) scale(.95); opacity:0;
+    pointer-events:none; transition: all .25s;
+  }
+  .fab-menu.open { transform: translateY(0) scale(1); opacity:1; pointer-events:all; }
+  .fab-menu-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .fab-menu-header span { font-family:'Cinzel',serif; color:var(--gold); font-size:.85rem; letter-spacing:.08em; }
+  .fab-close { background:none; border:none; cursor:pointer; color:var(--muted); display:flex; padding:4px; border-radius:50%; transition:.2s; }
+  .fab-close:hover { background:var(--gold-dim); color:var(--gold); }
+  .fab-close svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2.5; }
+  .service-btn {
+    display:flex; align-items:center; gap:10px;
+    width:100%; background:none; border:1px solid transparent;
+    color:var(--text); font-family:'Lato',sans-serif; font-size:.85rem;
+    padding:10px 12px; border-radius:10px; cursor:pointer; transition: all .2s;
+    text-align:left;
+  }
+  .service-btn:hover { background:var(--gold-dim); color:var(--gold); border-color:rgba(253,216,53,.2); }
+  .service-icon { font-size:18px; width:26px; flex-shrink:0; }
+
+  /* ── DIVIDER ── */
+  .gold-divider {
+    width:60px; height:2px; background:var(--gold); margin:0 auto 24px;
+    opacity:.6;
+  }
+
+  /* ── UTILS ── */
+  .text-gold { color:var(--gold); }
+  .text-muted { color:var(--muted); }
+  .text-center { text-align:center; }
+  .mt-4 { margin-top:1rem; }
+  .mb-2 { margin-bottom:.5rem; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:rgba(253,216,53,.3); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- Fixed Background -->
+<div class="bg-fixed"></div>
+
+<!-- ─── NAVIGATION ─── -->
+<nav class="nav" id="mainNav">
+  <div class="nav-items">
+    <button class="nav-btn active" onclick="scrollTo('home')">Inicio</button>
+    <button class="nav-btn" onclick="scrollTo('gallery')">Galería</button>
+    <button class="nav-btn" onclick="scrollTo('testimonials')">Testimonios</button>
+    <button class="nav-btn" onclick="scrollTo('locations')">Ubicaciones</button>
+    <button class="nav-btn" onclick="scrollTo('events')">Eventos</button>
+  </div>
+  <button class="nav-menu-btn" onclick="toggleMenu()" id="menuBtn">
+    <svg id="menuIcon" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+  </button>
+</nav>
+
+<!-- Overlay -->
+<div class="overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+<!-- Dropdown -->
+<div class="dropdown" id="dropdown">
+  <h4>MENÚ</h4>
+  <button class="dd-item" onclick="openWhatsApp()">
+    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    Contáctanos
+  </button>
+  <button class="dd-item">
+    <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-7 10 7M6 11v7a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-7"/></svg>
+    TAJOS Academy
+  </button>
+  <button class="dd-item" onclick="scrollTo('events'); closeMenu();">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Eventos y Promociones
+  </button>
+  <button class="dd-item">
+    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    Media
+  </button>
+  <button class="dd-item">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Acerca de nosotros
+  </button>
+  <button class="dd-item">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    FAQ
+  </button>
+  <button class="dd-item">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Nuestro equipo
+  </button>
+</div>
+
+<!-- ─── HERO ─── -->
+<section id="home">
+  <div class="hero-logo">TJ</div>
+  <p class="hero-sub">ASUNCIÓN, PARAGUAY</p>
+  <h1 class="hero-title">TAJOS<br>BARBEROS</h1>
+  <p class="hero-tagline">Forjando al caballero perfecto desde 2015.</p>
+  <div class="hero-cta">
+    <button class="btn-primary" onclick="scrollTo('locations')">Agendar Cita</button>
+    <button class="btn-outline" onclick="scrollTo('gallery')">Ver Galería</button>
+  </div>
+</section>
+
+<!-- ─── BRANDS ─── -->
+<section id="brands">
+  <div class="container">
+    <h2 class="section-title">Nuestras marcas de confianza</h2>
+    <div class="brands-track-wrap">
+      <div class="brands-track" id="brandsTrack">
+        <!-- duplicated for loop -->
+        <div class="brand-card"><span>BaByliss</span></div>
+        <div class="brand-card"><span>American Crew</span></div>
+        <div class="brand-card"><span>Wahl</span></div>
+        <div class="brand-card"><span>Andis</span></div>
+        <div class="brand-card"><span>Oster</span></div>
+        <div class="brand-card"><span>BaByliss</span></div>
+        <div class="brand-card"><span>American Crew</span></div>
+        <div class="brand-card"><span>Wahl</span></div>
+        <div class="brand-card"><span>Andis</span></div>
+        <div class="brand-card"><span>Oster</span></div>
+      </div>
+    </div>
+    <p class="brands-desc">Trabajamos con las mejores marcas del sector para garantizar resultados excepcionales</p>
+  </div>
+</section>
+
+<!-- ─── GALLERY ─── -->
+<section id="gallery">
+  <div class="container">
+    <h2 class="section-title">Nuestro arte</h2>
+    <div style="position:relative;">
+      <div class="gallery-viewport">
+        <div class="gallery-track" id="galleryTrack">
+          <div class="gallery-slide">
+            <img class="gallery-img" src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&q=80" alt="Cortes modernos">
+            <div class="gallery-overlay"></div>
+            <div class="gallery-text">
+              <h3>Cortes modernos y con máxima precisión</h3>
+              <p>Líneas nítidas y elegantes, hechas a la medida de tu estilo de vida.</p>
+            </div>
+          </div>
+          <div class="gallery-slide">
+            <img class="gallery-img" src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&q=80" alt="Cuidado de barba">
+            <div class="gallery-overlay"></div>
+            <div class="gallery-text">
+              <h3>Máximo detalle</h3>
+              <p>Técnicas consagradas con herramientas clásicas.</p>
+            </div>
+          </div>
+          <div class="gallery-slide">
+            <img class="gallery-img" src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&q=80" alt="Herramientas vintage">
+            <div class="gallery-overlay"></div>
+            <div class="gallery-text">
+              <h3>Excelencia en el cuidado de la barba</h3>
+              <p>Perfilado y acondicionamiento experto para la barba moderna.</p>
+            </div>
+          </div>
+          <div class="gallery-slide">
+            <img class="gallery-img" src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=600&q=80" alt="Ambiente">
+            <div class="gallery-overlay"></div>
+            <div class="gallery-text">
+              <h3>Atmósfera inigualable</h3>
+              <p>Relájese en nuestros espacios cómodos y entorno confortable.</p>
+            </div>
+          </div>
+          <div class="gallery-slide">
+            <img class="gallery-img" src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&q=80" alt="Ritual de barba">
+            <div class="gallery-overlay"></div>
+            <div class="gallery-text">
+              <h3>Ritual de barba completo</h3>
+              <p>La máxima experiencia de relajación.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="gallery-nav">
+        <button class="gallery-arrow" onclick="galleryPrev()">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="gallery-arrow" onclick="galleryNext()">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ─── -->
+<section id="testimonials">
+  <div class="container">
+    <h2 class="section-title">Algunos de nuestros clientes</h2>
+    <div class="gold-divider"></div>
+    <p class="text-center text-muted" style="max-width:540px;margin:0 auto 48px;font-size:.95rem;">
+      Descubra por qué cada vez más clientes exigentes confían en TAJOS para el cuidado y estilo personal
+    </p>
+    <div class="testimonials-grid">
+      <div class="testi-card">
+        <div class="stars">★★★★★</div>
+        <p class="testi-quote">"Servicios excelentes a un precio razonable. He venido 3 veces en 3 años y siempre he tenido una experiencia excepcional."</p>
+        <div class="testi-client">
+          <div class="testi-avatar">CR</div>
+          <div>
+            <div class="testi-name">Carlos Rodríguez</div>
+            <div class="testi-role">Cliente</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="stars">★★★★★</div>
+        <p class="testi-quote">"Solo el ritual de la toalla caliente vale la pena la visita. La atmósfera, la artesanía, la atención personal — es como volver en el tiempo cuando la barbería era una forma de arte. Servicio excepcional siempre."</p>
+        <div class="testi-client">
+          <div class="testi-avatar">DM</div>
+          <div>
+            <div class="testi-name">David Martínez</div>
+            <div class="testi-role">Cliente</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="stars">★★★★★</div>
+        <p class="testi-quote">"Excelentes profesionales, muy buen ambiente, buena atención, entorno cómodo y un trabajo con puro detalle. Recomendado al 100%."</p>
+        <div class="testi-client">
+          <div class="testi-avatar">WR</div>
+          <div>
+            <div class="testi-name">Walter Riveros</div>
+            <div class="testi-role">Cliente</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── LOCATIONS ─── -->
+<section id="locations">
+  <div class="container">
+    <h2 class="section-title">Nuestras ubicaciones</h2>
+    <div class="locations-grid">
+      <div class="loc-card" onclick="openModal('modal-loc1')">
+        <div class="loc-img-wrap">
+          <img class="loc-img" src="https://images.unsplash.com/photo-1567894340315-735d7c361db0?w=600&q=80" alt="Denis Roa">
+          <div class="loc-img-overlay"></div>
+        </div>
+        <div class="loc-body">
+          <div class="loc-name">TAJOS Denis Roa</div>
+          <div class="loc-addr">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Denis Roa 673, Bo. Herrera — Asunción
+          </div>
+          <div class="loc-badge">Sede Principal</div>
+        </div>
+      </div>
+      <div class="loc-card" onclick="openModal('modal-loc2')">
+        <div class="loc-img-wrap">
+          <img class="loc-img" src="https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=600&q=80" alt="Cottage">
+          <div class="loc-img-overlay"></div>
+        </div>
+        <div class="loc-body">
+          <div class="loc-name">TAJOS Cottage</div>
+          <div class="loc-addr">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Denis Roa 673, Bo. Herrera — Asunción
+          </div>
+          <div class="loc-badge">Ambiente Rústico</div>
+        </div>
+      </div>
+      <div class="loc-card" onclick="openModal('modal-loc3')">
+        <div class="loc-img-wrap">
+          <img class="loc-img" src="https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=600&q=80" alt="CIT">
+          <div class="loc-img-overlay"></div>
+        </div>
+        <div class="loc-body">
+          <div class="loc-name">TAJOS CIT</div>
+          <div class="loc-addr">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Spa Caballeros, Club Internacional de Tenis
+          </div>
+          <div class="loc-badge">Exclusivo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LOCATION MODALS -->
+<div class="modal-backdrop" id="modal-loc1" onclick="closeModalOutside(event,'modal-loc1')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">TAJOS Denis Roa</div>
+      <button class="modal-close" onclick="closeModal('modal-loc1')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-gallery">
+      <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=75" alt="Interior 1">
+      <img src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400&q=75" alt="Interior 2">
+      <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&q=75" alt="Interior 3">
+      <img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&q=75" alt="Interior 4">
+    </div>
+    <p class="modal-desc">Nuestra sede principal en el corazón de Herrera. Esta barbería combina la calidez vintage con modernas amenities, donde además ofrecemos bebidas frescas y café de primera calidad.</p>
+    <div class="modal-info">
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Denis Roa 673, Bo. Herrera — Asunción, Paraguay</div>
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Lun–Sáb: 9:00 AM – 7:30 PM &nbsp;|&nbsp; Dom: CERRADO</div>
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1.15h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.75a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>(+595) 982-473-078</div>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="openWhatsApp()">Agendar su cita</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-loc2" onclick="closeModalOutside(event,'modal-loc2')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">TAJOS Cottage</div>
+      <button class="modal-close" onclick="closeModal('modal-loc2')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-gallery">
+      <img src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&q=75" alt="Cottage 1">
+      <img src="https://images.unsplash.com/photo-1567894340315-735d7c361db0?w=400&q=75" alt="Cottage 2">
+      <img src="https://images.unsplash.com/photo-1600948836101-f9ffda59d250?w=400&q=75" alt="Cottage 3">
+      <img src="https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=400&q=75" alt="Cottage 4">
+    </div>
+    <p class="modal-desc">Ambientado como una acogedora cabaña, combina la calidez de la madera rústica con un diseño refinado. Un espacio privado, pensado para quienes buscan tranquilidad, discreción y un servicio de barbería de primer nivel.</p>
+    <div class="modal-info">
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Denis Roa 673, Bo. Herrera — Asunción, Paraguay</div>
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Lun–Sáb: 9:00 AM – 7:30 PM &nbsp;|&nbsp; Dom: CERRADO</div>
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1.15h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.75a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>(+595) 982-473-078</div>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="openWhatsApp()">Agendar su cita</button>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-loc3" onclick="closeModalOutside(event,'modal-loc3')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">TAJOS CIT</div>
+      <button class="modal-close" onclick="closeModal('modal-loc3')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-gallery">
+      <img src="https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&q=75" alt="CIT 1">
+      <img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&q=75" alt="CIT 2">
+      <img src="https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400&q=75" alt="CIT 3">
+      <img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=400&q=75" alt="CIT 4">
+    </div>
+    <p class="modal-desc">Ubicado en el prestigioso Club Internacional de Tenis, redefine la barbería como un servicio de élite. Diseñada para socios exigentes, combina elegancia y discreción en un ambiente reservado con atención personalizada.</p>
+    <div class="modal-info">
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Spa Caballeros, CIT — Tte. 2° Benigno Cáceres y Sinforiano Buzó, Asunción</div>
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Lun–Sáb: 1:00 PM – 9:00 PM &nbsp;|&nbsp; Dom: CERRADO</div>
+      <div class="modal-info-row"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1.15h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.75a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>(+595) 982-473-078</div>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="openWhatsApp()">Agendar su cita</button>
+  </div>
+</div>
+
+<!-- ─── EVENTS ─── -->
+<section id="events">
+  <div class="container">
+    <h2 class="section-title">Eventos y Promociones</h2>
+    <div class="events-grid">
+      <div class="event-card">
+        <img class="event-img" src="https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&q=80" alt="Promo barba">
+        <span class="event-badge badge-promo">🎁 Promoción</span>
+        <div class="event-overlay"></div>
+        <div class="event-text">
+          <h3>Descuento del 20% en servicios de barba</h3>
+          <p>Todo el mes de enero, disfruta de un 20% de descuento en todos nuestros servicios de barba y perfilado.</p>
+          <div class="event-meta">
+            <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Todo enero 2025</span>
+            <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Horario regular</span>
+          </div>
+        </div>
+      </div>
+      <div class="event-card">
+        <img class="event-img" src="https://images.unsplash.com/photo-1582618800048-6a1b99c7e60b?w=600&q=80" alt="Taller">
+        <span class="event-badge badge-event">📅 Evento</span>
+        <div class="event-overlay"></div>
+        <div class="event-text">
+          <h3>Taller de Barbería Clásica</h3>
+          <p>Aprende las técnicas tradicionales de barbería en nuestro taller exclusivo. Cupos limitados.</p>
+          <div class="event-meta">
+            <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>15 feb, 2025</span>
+            <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>10:00 – 14:00</span>
+          </div>
+        </div>
+      </div>
+      <div class="event-card">
+        <img class="event-img" src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&q=80" alt="Padre hijo">
+        <span class="event-badge badge-promo">🎁 Promoción</span>
+        <div class="event-overlay"></div>
+        <div class="event-text">
+          <h3>Paquete Padre e Hijo</h3>
+          <p>Disfruten juntos de la experiencia TAJOS con un descuento especial del 15% en servicios combinados.</p>
+          <div class="event-meta">
+            <span><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Hasta marzo 2025</span>
+            <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Cualquier horario</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="newsletter">
+      <p>¿Quieres estar al día con nuestras últimas promociones y eventos?</p>
+      <button class="btn-primary">Suscríbete a nuestro newsletter</button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="container">
+    <p class="footer-title">Síguenos</p>
+    <div class="socials">
+      <a href="https://instagram.com/tajosbarberos" target="_blank" class="social-btn" title="Instagram">
+        <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      </a>
+      <a href="https://tiktok.com/@barberos" target="_blank" class="social-btn" title="TikTok">
+        <svg viewBox="0 0 24 24" stroke-width="1.8"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+      </a>
+      <a href="https://facebook.com/tajosdenisroa2" target="_blank" class="social-btn" title="Facebook">
+        <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </a>
+      <a href="https://linkedin.com/company/barberos" target="_blank" class="social-btn" title="LinkedIn">
+        <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+      </a>
+    </div>
+    <hr class="footer-sep">
+    <p class="footer-copy">© 2025 TAJOS BARBEROS. Todos los derechos reservados. &nbsp;|&nbsp; Forjando caballeros desde 2015.</p>
+  </div>
+</footer>
+
+<!-- ─── FLOATING BUTTON ─── -->
+<div class="fab-wrap">
+  <div class="fab-menu" id="fabMenu">
+    <div class="fab-menu-header">
+      <span>Selecciona un servicio</span>
+      <button class="fab-close" onclick="closeFabMenu()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <button class="service-btn" onclick="bookService('Corte de cabello')"><span class="service-icon">✂️</span>Corte de cabello</button>
+    <button class="service-btn" onclick="bookService('Arreglo de barba')"><span class="service-icon">💈</span>Arreglo de barba</button>
+    <button class="service-btn" onclick="bookService('Corte + Barba')"><span class="service-icon">🔥</span>Corte + Barba</button>
+    <button class="service-btn" onclick="bookService('Ritual completo')"><span class="service-icon">⭐</span>Ritual completo</button>
+  </div>
+  <div class="fab-tooltip">Agendar cita</div>
+  <button class="fab" onclick="toggleFab()">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <div class="fab-pulse"></div>
+  </button>
+</div>
+
+<script>
+// ── GALLERY ──
+let galleryPos = 0;
+const slides = document.querySelectorAll('.gallery-slide');
+let slidesPerView = () => window.innerWidth >= 900 ? 3 : window.innerWidth >= 600 ? 2 : 1;
+function updateGallery(){
+  const track = document.getElementById('galleryTrack');
+  const spv = slidesPerView();
+  const maxPos = Math.max(0, slides.length - spv);
+  galleryPos = Math.min(galleryPos, maxPos);
+  const w = track.parentElement.offsetWidth;
+  const gap = 20;
+  const slideW = (w - gap * (spv - 1)) / spv;
+  track.style.transform = `translateX(-${galleryPos * (slideW + gap)}px)`;
+}
+function galleryNext(){ galleryPos = Math.min(galleryPos + 1, slides.length - slidesPerView()); updateGallery(); }
+function galleryPrev(){ galleryPos = Math.max(galleryPos - 1, 0); updateGallery(); }
+window.addEventListener('resize', updateGallery);
+
+// ── NAVIGATION ──
+function scrollTo(id){
+  document.getElementById(id)?.scrollIntoView({ behavior:'smooth' });
+  closeMenu();
+}
+function toggleMenu(){
+  const dd = document.getElementById('dropdown');
+  const ov = document.getElementById('menuOverlay');
+  const icon = document.getElementById('menuIcon');
+  const open = dd.classList.toggle('open');
+  ov.classList.toggle('open', open);
+  icon.innerHTML = open
+    ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+    : '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>';
+}
+function closeMenu(){
+  document.getElementById('dropdown').classList.remove('open');
+  document.getElementById('menuOverlay').classList.remove('open');
+  document.getElementById('menuIcon').innerHTML = '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>';
+}
+
+// Active nav on scroll
+const sections = ['home','brands','gallery','testimonials','locations','events'];
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY + 100;
+  let current = 'home';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if(el && el.offsetTop <= scrollY) current = id;
+  });
+  document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+    const labels = ['Inicio','Galería','Testimonios','Ubicaciones','Eventos'];
+    const ids = ['home','gallery','testimonials','locations','events'];
+    btn.classList.toggle('active', ids[i] === current);
+  });
+});
+
+// ── MODALS ──
+function openModal(id){ document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+function closeModalOutside(e, id){ if(e.target.id === id) closeModal(id); }
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ document.querySelectorAll('.modal-backdrop.open').forEach(m => { m.classList.remove('open'); document.body.style.overflow=''; }); }});
+
+// ── FAB ──
+let fabOpen = false;
+function toggleFab(){ fabOpen = !fabOpen; document.getElementById('fabMenu').classList.toggle('open', fabOpen); }
+function closeFabMenu(){ fabOpen = false; document.getElementById('fabMenu').classList.remove('open'); }
+function bookService(svc){ window.open(`https://wa.me/595982473078?text=${encodeURIComponent('Hola, me gustaría agendar una cita para: ' + svc)}`, '_blank'); closeFabMenu(); }
+function openWhatsApp(){ window.open('https://wa.me/595982473078?text=Hola, me gustaría hacer una consulta sobre TAJOS Barberos.', '_blank'); }
+</script>
+</body>
+</html>
