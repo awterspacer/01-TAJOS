@@ -287,9 +287,8 @@ tbody tr:last-child td{border-bottom:none;}
   <div class="nav-item" data-page="giftcards"><span class="icon">🎁</span>Giftcards</div>
   <div style="height:6px"></div>
   <div style="padding:0 16px 6px;font-size:.65rem;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;font-family:var(--font-cond)">Sucursal Activa</div>
-  <div class="local-badges">
-    <div class="local-badge active" id="localBtn1" onclick="selectLocal(1)">Central</div>
-    <div class="local-badge" id="localBtn2" onclick="selectLocal(2)">Superseis</div>
+  <div class="local-badges" id="localBadgesContainer">
+    <!-- generado dinámicamente por renderLocalBadges() -->
   </div>
   <div style="margin-top:auto">
     <div class="sidebar-user" onclick="openModal('modalMiPerfil')">
@@ -478,8 +477,7 @@ tbody tr:last-child td{border-bottom:none;}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <select class="form-control" id="arqueoFiltroLocal" style="width:150px" onchange="renderArqueosAdmin()">
         <option value="0">Todas las sucursales</option>
-        <option value="1">Central</option>
-        <option value="2">Superseis</option>
+        <!-- poblado por _aplicarRestriccionReporteLocal() -->
       </select>
       <input type="date" class="form-control" id="arqueoFiltroDesde" style="width:150px" onchange="renderArqueosAdmin()">
       <input type="date" class="form-control" id="arqueoFiltroHasta" style="width:150px" onchange="renderArqueosAdmin()">
@@ -520,7 +518,7 @@ tbody tr:last-child td{border-bottom:none;}
       <input type="date" class="form-control" id="reporteDesde" style="width:150px" onchange="generarReporte()">
       <input type="date" class="form-control" id="reporteHasta" style="width:150px" onchange="generarReporte()">
     </div>
-    <select class="form-control" id="reporteLocal" style="width:150px" onchange="generarReporte()"><option value="0">Todas las sucursales</option><option value="1">Central</option><option value="2">Superseis</option></select>
+    <select class="form-control" id="reporteLocal" style="width:150px" onchange="generarReporte()"><option value="0">Todas las sucursales</option><!-- poblado por _aplicarRestriccionReporteLocal() --></select>
     <select class="form-control" id="reporteBarbero" style="width:160px" onchange="generarReporte()"><option value="0">Todos los barberos</option></select>
   </div>
   <div id="reporteTabResumen">
@@ -582,9 +580,7 @@ tbody tr:last-child td{border-bottom:none;}
     <div><div class="section-title">INVENTARIO</div><div class="section-sub">Stock de productos por sucursal</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <select class="form-control" id="invFiltroLocal" style="width:160px" onchange="renderInventario()">
-        <option value="0">Ambas sucursales</option>
-        <option value="1">Central</option>
-        <option value="2">Superseis</option>
+        <option value="0">Todas las sucursales</option>
       </select>
       <select class="form-control" id="invFiltroCategoria" style="width:180px" onchange="renderInventario()">
         <option value="">Todas las categorías</option>
@@ -595,13 +591,11 @@ tbody tr:last-child td{border-bottom:none;}
   </div>
   <div class="grid-4" style="margin-bottom:20px">
     <div class="stat-card"><div class="stat-label">Total productos</div><div class="stat-value" id="invStatTotal">0</div><div class="stat-icon">📦</div></div>
-    <div class="stat-card"><div class="stat-label">Sin stock (sucursal)</div><div class="stat-value" id="invStatSinStock" style="color:var(--danger)">0</div><div class="stat-icon">⚠</div></div>
-    <div class="stat-card"><div class="stat-label">Stock bajo (sucursal)</div><div class="stat-value" id="invStatBajo" style="color:#e67e22">0</div><div class="stat-icon">📉</div></div>
-    <div class="stat-card"><div class="stat-label">Valor total inventario</div><div class="stat-value" id="invStatValor" style="font-size:1.4rem">Gs. 0</div><div class="stat-icon">💰</div></div>
+    <div class="stat-card"><div class="stat-label">Sin stock</div><div class="stat-value" id="invStatSinStock" style="color:var(--danger)">0</div><div class="stat-icon">⚠</div></div>
+    <div class="stat-card"><div class="stat-label">Stock bajo (&lt;5)</div><div class="stat-value" id="invStatBajo" style="color:#e67e22">0</div><div class="stat-icon">📉</div></div>
+    <div class="stat-card"><div class="stat-label">Valor total</div><div class="stat-value" id="invStatValor" style="font-size:1.4rem">Gs. 0</div><div class="stat-icon">💰</div></div>
   </div>
-  <div class="card">
-    <div id="invContenido"></div>
-  </div>
+  <div class="card"><div id="invContenido"></div></div>
 </div>
 
 <!-- GIFTCARDS -->
@@ -657,7 +651,7 @@ tbody tr:last-child td{border-bottom:none;}
         <div id="turnoServiciosChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Sucursal</label><select class="form-control" id="turnoLocal"><option value="1">Central</option><option value="2">Superseis</option></select></div>
+        <div class="form-group"><label class="form-label">Sucursal</label><select class="form-control" id="turnoLocal"><!-- poblado por populateSels() --></select></div>
         <div class="form-group"><label class="form-label">Notas</label><input type="text" class="form-control" id="turnoNotas" placeholder="Observaciones..."></div>
       </div>
     </div>
@@ -752,7 +746,7 @@ tbody tr:last-child td{border-bottom:none;}
       </div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Fecha de Ingreso</label><input type="date" class="form-control" id="barberoIngreso"></div>
-        <div class="form-group"><label class="form-label">Sucursal</label><select class="form-control" id="barberoLocal"><option value="1">Central</option><option value="2">Superseis</option><option value="0">Ambas</option></select></div>
+        <div class="form-group"><label class="form-label">Sucursal</label><select class="form-control" id="barberoLocal"><option value="0">Ambas</option><!-- poblado por populateSels() --></select></div>
       </div>
       <div class="form-group">
         <label class="form-label">Celular (WhatsApp) *</label>
@@ -878,9 +872,8 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="usuEmail" placeholder="correo@ejemplo.com"></div>
       <div id="localAccessGroup" style="margin-top:10px;padding:12px;background:var(--bg-raised);border-radius:var(--radius);border:1px solid var(--border)">
         <div style="font-family:var(--font-cond);font-size:.78rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Acceso a Sucursales (solo cajero)</div>
-        <div style="display:flex;gap:20px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem"><input type="checkbox" id="usuAccCentral" checked style="accent-color:var(--gold)"> Central</label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem"><input type="checkbox" id="usuAccSuperseis" checked style="accent-color:var(--gold)"> Superseis</label>
+        <div id="usuAccesosContainer" style="display:flex;gap:20px;flex-wrap:wrap">
+          <!-- generado dinámicamente en openModal / renderAccesosUsuario() -->
         </div>
       </div>
     </div>
@@ -1028,7 +1021,6 @@ const SUPA_URL='https://tgwhegmgchnttsmrhcfc.supabase.co';
 
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnd2hlZ21nY2hudHRzbXJoY2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODg1ODgsImV4cCI6MjA4OTQ2NDU4OH0.3g20p6yGber_j6HNB5oQqesOm_YgQ_fo9P2Yl2jGPbM';
 
-
 // ══════════════════════════════════════════════════════════════
 // MAPA: nombre de store (IndexedDB) → nombre de tabla (Supabase)
 // Los nombres en snake_case corresponden al schema SQL generado.
@@ -1067,7 +1059,6 @@ const FIELD_TO_DB = {
   barberoNombre:'barbero_nombre', clienteNombre:'cliente_nombre',
   registradoPor:'registrado_por', createdAt:'created_at',
   giftcardId:'giftcard_id',
-  stockCentral:'stock_central', stockSuperseis:'stock_superseis',
   // Arqueos
   turnoLabel:'turno_label',
   cajaInicial:'caja_inicial',
@@ -1086,7 +1077,7 @@ const SUPA_COLS={
   barbero_users:new Set(['id','barbero_id','login','pin','activo','ultimo_acceso','created_at']),
   clientes:new Set(['id','nombre','apellido','documento','celular','email','notas','created_at','updated_at']),
   servicios:new Set(['id','nombre','precio','duracion','categoria','descripcion','comision','activo','created_at','updated_at']),
-  productos:new Set(['id','nombre','precio','stock','stock_central','stock_superseis','categoria','descripcion','comisionable','activo','created_at','updated_at']),
+  productos:new Set(['id','nombre','precio','stock','categoria','descripcion','comisionable','activo','created_at','updated_at']),
   turnos:new Set(['id','cliente_id','cliente_nombre','barbero_id','fecha','hora','local','servicios','notas','estado','created_at','updated_at']),
   usuarios:new Set(['id','login','password','nombre','apellido','email','rol','estado','acceso','ultimo_acceso','created_at','updated_at']),
   historial:new Set(['id','usuario','nombre','rol','accion','fecha','hora','ts']),
@@ -1346,23 +1337,25 @@ const METODOS_DEFAULT=[
 let METODOS=[...METODOS_DEFAULT];
 
 // ══ HELPERS DE STOCK POR SUCURSAL ══
-// El stock se divide en stockCentral y stockSuperseis.
-// Estas funciones leen/escriben el campo correcto según ST.localActivo.
+// stock en Supabase es JSONB: { "1": 10, "2": 5, ... }
+// Para agregar una sucursal, solo agregar a SUCURSALES arriba — nada más cambia.
 function getStockLocal(p, local){
-  const l=Number(local||ST.localActivo);
-  if(l===1) return Number(p.stockCentral??p.stock_central??p.stock??0);
-  if(l===2) return Number(p.stockSuperseis??p.stock_superseis??0);
-  return Number(p.stock??0);
+  const l=String(local!=null?local:ST.localActivo);
+  const s=p.stock;
+  if(s&&typeof s==='object') return Number(s[l]??0);
+  if(typeof s==='number') return l==='1'?s:0; // fallback schema viejo
+  return 0;
 }
 function setStockLocal(p, cantidad, local){
-  const l=Number(local||ST.localActivo);
-  if(l===1) p.stockCentral=cantidad;
-  else if(l===2) p.stockSuperseis=cantidad;
-  else p.stock=cantidad;
+  const l=String(local!=null?local:ST.localActivo);
+  if(!p.stock||typeof p.stock!=='object') p.stock={};
+  p.stock={...p.stock,[l]:Math.max(0,Number(cantidad))};
   return p;
 }
 function stockTotalProducto(p){
-  return Number(p.stockCentral??p.stock_central??0)+Number(p.stockSuperseis??p.stock_superseis??0);
+  const s=p.stock;
+  if(!s||typeof s!=='object') return typeof s==='number'?s:0;
+  return Object.values(s).reduce((t,v)=>t+Number(v||0),0);
 }
 
 async function cargarMetodos(){
@@ -1400,7 +1393,15 @@ const fmtD=d=>{if(!d)return '';return new Date(d+'T00:00:00').toLocaleDateString
 const toDS=d=>d.toISOString().split('T')[0];
 const hoy=()=>toDS(new Date());
 const ahora=()=>{const n=new Date();return toDS(n)+' '+n.toTimeString().slice(0,5);};
-const localNombre=n=>n==1?'Central':'Superseis';
+// ══ SUCURSALES ══
+// Para agregar una sucursal nueva: añadir una entrada aquí y correr el SQL correspondiente.
+// Todo el resto del sistema se adapta automáticamente.
+const SUCURSALES = {
+  1: 'Central',
+  2: 'Superseis',
+};
+const SUCURSAL_IDS = ()=>Object.keys(SUCURSALES).map(Number);
+const localNombre = n=>SUCURSALES[Number(n)]||`Sucursal ${n}`;
 
 // ══ CLOCK ══
 function updClock(){
@@ -1444,18 +1445,8 @@ function showApp(){
   });
   const btnStock=document.getElementById('btnIngresoStock');
   if(btnStock)btnStock.style.display=isAdmin?'inline-flex':'none';
-  // Aplicar restricción de acceso a sucursales para cajeros
-  if(!isAdmin&&u.acceso){
-    const acc=u.acceso;
-    const btn1=document.getElementById('localBtn1');const btn2=document.getElementById('localBtn2');
-    if(!acc.central&&acc.superseis){if(btn1)btn1.style.display='none';selectLocal(2);}
-    else if(acc.central&&!acc.superseis){if(btn2)btn2.style.display='none';selectLocal(1);}
-    else{if(btn1)btn1.style.display='';if(btn2)btn2.style.display='';}
-  } else {
-    const btn1=document.getElementById('localBtn1');const btn2=document.getElementById('localBtn2');
-    if(btn1)btn1.style.display='';if(btn2)btn2.style.display='';
-  }
-  // Restringir selector de sucursal en Reportes para cajeros con una sola sucursal
+  // Renderizar botones de sucursal según acceso del usuario
+  renderLocalBadges();
   _aplicarRestriccionReporteLocal();
   navigate('dashboard');
   populateSels();
@@ -1464,16 +1455,23 @@ function showApp(){
 
 function getTurnoLabel(){const h=new Date().getHours();return h<14?'Cajero · Turno 1 (8–14h)':'Cajero · Turno 2 (14–20h)';}
 
-// Devuelve array de locales permitidos para el usuario actual.
-// Admin → [1,2]. Cajero ambas → [1,2]. Cajero solo central → [1]. Cajero solo superseis → [2].
+// Devuelve array de IDs de locales permitidos para el usuario actual.
+// Admin → todos. Cajero → según u.acceso = {1:bool, 2:bool, ...}
 function getLocalesPermitidos(){
   const u=ST.user;
-  if(!u||u.rol==='admin')return[1,2];
+  if(!u||u.rol==='admin') return SUCURSAL_IDS();
   const acc=u.acceso||{};
-  const lista=[];
-  if(acc.central!==false)lista.push(1);
-  if(acc.superseis!==false)lista.push(2);
-  return lista.length?lista:[1]; // fallback a central si no hay nada definido
+  // Soportar formato viejo {central,superseis} y nuevo {1,2,...}
+  const lista=SUCURSAL_IDS().filter(id=>{
+    // formato nuevo: clave numérica o string del id
+    if(acc[id]!==undefined) return acc[id]!==false;
+    if(acc[String(id)]!==undefined) return acc[String(id)]!==false;
+    // formato legacy
+    if(id===1&&acc.central!==undefined) return acc.central!==false;
+    if(id===2&&acc.superseis!==undefined) return acc.superseis!==false;
+    return true; // si no hay restricción explícita, permitir
+  });
+  return lista.length?lista:[SUCURSAL_IDS()[0]];
 }
 
 // Filtra un array de registros que tengan campo 'local' a los locales permitidos.
@@ -1488,18 +1486,19 @@ function filtrarPorLocalPermitido(arr){
 // Cajero con una sola sucursal: lo fija en esa sucursal y oculta el selector.
 // Cajero con ambas o admin: muestra todas las opciones.
 function _aplicarRestriccionReporteLocal(){
+  // Actualizar todos los selectores de sucursal con las sucursales del sistema
+  const opts='<option value="0">Todas las sucursales</option>'+
+    SUCURSAL_IDS().map(id=>`<option value="${id}">${localNombre(id)}</option>`).join('');
+  ['reporteLocal','arqueoFiltroLocal','invFiltroLocal'].forEach(sid=>{
+    const sel=document.getElementById(sid);
+    if(sel){const cur=sel.value;sel.innerHTML=opts;if(cur)sel.value=cur;}
+  });
+  // Restricción para cajeros con una sola sucursal
   const sel=document.getElementById('reporteLocal');
   if(!sel)return;
   const permitidos=getLocalesPermitidos();
-  if(permitidos.length===1){
-    // Solo una sucursal permitida: fijar valor y ocultar selector
-    sel.value=String(permitidos[0]);
-    sel.style.display='none';
-  }else{
-    // Acceso total: mostrar selector completo
-    sel.value='0';
-    sel.style.display='';
-  }
+  if(permitidos.length===1){sel.value=String(permitidos[0]);sel.style.display='none';}
+  else{sel.style.display='';}
 }
 
 async function logoutConfirm(){await showRecordatorioBackup();}
@@ -1549,10 +1548,25 @@ function navigate(page){
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('visible');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('visible');}
 
+// Renderiza los botones de sucursal en el sidebar según permisos del usuario actual.
+// Si el usuario solo tiene acceso a una sucursal, la selecciona automáticamente.
+function renderLocalBadges(){
+  const permitidos=getLocalesPermitidos();
+  const container=document.getElementById('localBadgesContainer');
+  if(!container)return;
+  container.innerHTML=permitidos.map(id=>
+    `<div class="local-badge${Number(id)===Number(ST.localActivo)?' active':''}" id="localBtn${id}" onclick="selectLocal(${id})">${localNombre(id)}</div>`
+  ).join('');
+  // Si el local activo no está en los permitidos, cambiar al primero disponible
+  if(!permitidos.includes(Number(ST.localActivo))) selectLocal(permitidos[0]);
+}
+
 function selectLocal(n){
-  ST.localActivo=n;
-  document.getElementById('localBtn1').classList.toggle('active',n===1);
-  document.getElementById('localBtn2').classList.toggle('active',n===2);
+  ST.localActivo=Number(n);
+  // Actualizar estado activo de los badges
+  document.querySelectorAll('#localBadgesContainer .local-badge').forEach(b=>{
+    b.classList.toggle('active',b.id===`localBtn${n}`);
+  });
   document.getElementById('dashLocalLabel').textContent=localNombre(n)+' · Resumen del día';
   document.getElementById('agendaLocalLabel').textContent=localNombre(n);
   document.getElementById('cajaLocalLabel').textContent=localNombre(n);
@@ -1666,8 +1680,7 @@ function openModal(id,extra){
     document.getElementById('usuEstado').value='activo';
     document.getElementById('usuEditId').value='';
     document.getElementById('modalUsuTitulo').textContent='🔐 Nuevo Usuario';
-    const accCentral=document.getElementById('usuAccCentral');const accSuperseis=document.getElementById('usuAccSuperseis');
-    if(accCentral)accCentral.checked=true;if(accSuperseis)accSuperseis.checked=true;
+    renderAccesosUsuario('cajero',null);
     toggleLocalAccess('cajero');
   }
 }
@@ -1704,6 +1717,26 @@ function toggleLocalAccess(rol){
   if(g)g.style.display=rol==='cajero'?'block':'none';
 }
 
+// Genera los checkboxes de acceso a sucursales dinámicamente según SUCURSALES.
+// acceso puede ser {1:bool,2:bool} (nuevo) o {central:bool,superseis:bool} (legacy).
+function renderAccesosUsuario(rol, acceso){
+  const c=document.getElementById('usuAccesosContainer');
+  if(!c)return;
+  const acc=acceso||{};
+  c.innerHTML=SUCURSAL_IDS().map(sid=>{
+    // Leer valor: primero formato nuevo, luego legacy
+    let checked=true;
+    if(acc[sid]!==undefined) checked=acc[sid]!==false;
+    else if(acc[String(sid)]!==undefined) checked=acc[String(sid)]!==false;
+    else if(sid===1&&acc.central!==undefined) checked=acc.central!==false;
+    else if(sid===2&&acc.superseis!==undefined) checked=acc.superseis!==false;
+    return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem">
+      <input type="checkbox" id="usuAcc_${sid}" ${checked?'checked':''} style="accent-color:var(--gold)">
+      ${localNombre(sid)}
+    </label>`;
+  }).join('');
+}
+
 async function guardarUsuario(){
   const id=document.getElementById('usuEditId').value;
   const login=document.getElementById('usuLogin').value.trim().toLowerCase();
@@ -1713,11 +1746,15 @@ async function guardarUsuario(){
   const rol=document.getElementById('usuRol').value;
   if(!nombre||!apellido||!login)return toast('Nombre, apellido y usuario son obligatorios','error');
   if(pass&&!/^\d+$/.test(pass))return toast('La contraseña debe contener solo números','error');
-  const accCentral=document.getElementById('usuAccCentral')?.checked!==false;
-  const accSuperseis=document.getElementById('usuAccSuperseis')?.checked!==false;
+  // Leer accesos dinámicos
+  const acceso={};
+  SUCURSAL_IDS().forEach(sid=>{
+    const cb=document.getElementById(`usuAcc_${sid}`);
+    acceso[sid]=rol==='admin'?true:(cb?cb.checked:true);
+  });
   const users=await dbAll('usuarios');
   if(users.find(u=>u.login===login&&u.id!==(id?+id:null)))return toast('Ese usuario ya existe','error');
-  const data={nombre,apellido,login,email:document.getElementById('usuEmail').value.trim(),rol,estado:document.getElementById('usuEstado').value,acceso:{central:rol==='admin'?true:accCentral,superseis:rol==='admin'?true:accSuperseis}};
+  const data={nombre,apellido,login,email:document.getElementById('usuEmail').value.trim(),rol,estado:document.getElementById('usuEstado').value,acceso};
   if(id){
     data.id=+id;const ex=await dbGet('usuarios',data.id);
     data.password=pass||ex.password;data.ultimoAcceso=ex.ultimoAcceso||'';
@@ -1736,9 +1773,7 @@ async function editarUsuario(id){
   document.getElementById('usuApellido').value=u.apellido;document.getElementById('usuLogin').value=u.login;
   document.getElementById('usuEmail').value=u.email||'';document.getElementById('usuRol').value=u.rol;
   document.getElementById('usuEstado').value=u.estado;document.getElementById('usuPassword').value=u.password||'';
-  const accCentral=document.getElementById('usuAccCentral');const accSuperseis=document.getElementById('usuAccSuperseis');
-  if(accCentral)accCentral.checked=u.acceso?.central!==false;
-  if(accSuperseis)accSuperseis.checked=u.acceso?.superseis!==false;
+  renderAccesosUsuario(u.rol,u.acceso);
   toggleLocalAccess(u.rol);
   document.getElementById('modalUsuTitulo').textContent='✏ Editar Usuario';
   openModal('modalNuevoUsuario');
@@ -1834,7 +1869,7 @@ async function renderCatalogo(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         ${p.categoria?`<span class="badge badge-gray" style="font-size:.7rem">${p.categoria}</span>`:''}
         ${p.comisionable?`<span class="badge badge-green" style="font-size:.7rem">&#10003; Comisionable 10%</span>`:''}
-        <span style="font-size:.78rem;color:var(--text-muted)">${localNombre(ST.localActivo)}:</span>
+        <span style="font-size:.78rem;color:var(--text-muted)">Stock:</span>
         <span class="stock-badge ${sc}">${stockLocal}</span>
         <span style="font-size:.72rem;color:var(--text-dim)">| Total: ${stockTotalProducto(p)}</span>
       </div>
@@ -1884,17 +1919,29 @@ async function eliminarServicio(id){
 
 async function guardarProducto(){
   const id=document.getElementById('prodEditId').value;
-  const data={nombre:document.getElementById('prodNombre').value.trim(),precio:+document.getElementById('prodPrecio').value||0,stock:+document.getElementById('prodStock').value||0,categoria:document.getElementById('prodCategoria')?.value||'',descripcion:document.getElementById('prodDesc').value.trim(),comisionable:document.getElementById('prodComisionable')?.checked||false};
+  const stockVal=+document.getElementById('prodStock').value||0;
+  const data={nombre:document.getElementById('prodNombre').value.trim(),precio:+document.getElementById('prodPrecio').value||0,categoria:document.getElementById('prodCategoria')?.value||'',descripcion:document.getElementById('prodDesc').value.trim(),comisionable:document.getElementById('prodComisionable')?.checked||false};
   if(!data.nombre)return toast('El nombre es requerido','error');
-  if(id){data.id=+id;await dbPut('productos',data);await logAct(`Editó producto: ${data.nombre}`);toast('Producto actualizado','success');}
-  else{await dbAdd('productos',data);await logAct(`Creó producto: ${data.nombre}`);toast('Producto creado','success');}
+  if(id){
+    // Al editar: preservar stock de otras sucursales, solo actualizar la activa
+    const ex=await dbGet('productos',id)||{};
+    data.stock=typeof ex.stock==='object'?{...ex.stock}:{};
+    data.stock[String(ST.localActivo)]=stockVal;
+    data.id=+id;await dbPut('productos',data);await logAct(`Editó producto: ${data.nombre}`);toast('Producto actualizado','success');
+  }else{
+    // Nuevo producto: inicializar stock con 0 en todas las sucursales, valor en la activa
+    data.stock={};
+    SUCURSAL_IDS().forEach(sid=>data.stock[String(sid)]=0);
+    data.stock[String(ST.localActivo)]=stockVal;
+    await dbAdd('productos',data);await logAct(`Creó producto: ${data.nombre}`);toast('Producto creado','success');
+  }
   closeModal('modalNuevoProducto');document.getElementById('prodEditId').value='';renderCatalogo();populateSels();
 }
 
 async function editarProducto(id){
   const p=await dbGet('productos',id);if(!p)return;
   document.getElementById('prodEditId').value=id;document.getElementById('prodNombre').value=p.nombre;
-  document.getElementById('prodPrecio').value=p.precio;document.getElementById('prodStock').value=p.stock||0;
+  document.getElementById('prodPrecio').value=p.precio;document.getElementById('prodStock').value=getStockLocal(p);
   document.getElementById('prodDesc').value=p.descripcion||'';
   ST._pendingProdCat=p.categoria||'';
   const cbComis=document.getElementById('prodComisionable');if(cbComis)cbComis.checked=!!p.comisionable;
@@ -1909,7 +1956,7 @@ async function eliminarProducto(id){
 async function populateStockSel(){
   const prods=await dbAll('productos');
   const sel=document.getElementById('stockProductoSel');
-  sel.innerHTML=prods.map(p=>`<option value="${p.id}" data-stock="${p.stock||0}">${p.nombre} (Stock: ${p.stock||0})</option>`).join('');
+  sel.innerHTML=prods.map(p=>{const sl=getStockLocal(p);return`<option value="${p.id}" data-stock="${sl}">${p.nombre} (${localNombre(ST.localActivo)}: ${sl} | Total: ${stockTotalProducto(p)})</option>`;}).join('');
   updateStockActual();
 }
 function updateStockActual(){
@@ -1922,12 +1969,9 @@ async function ingresarStock(){
   const cant=+document.getElementById('stockCantidad').value||0;
   const notas=document.getElementById('stockNotas').value.trim();
   if(!prodId||cant<=0)return toast('Selecciona producto y cantidad válida','error');
-  const p=await dbGet('productos',prodId);
-  const stockActual=getStockLocal(p);
-  setStockLocal(p, stockActual+cant);
-  await dbPut('productos',p);
-  await logAct(`Ingresó ${cant} u. de "${p.nombre}" en ${localNombre(ST.localActivo)}${notas?' ('+notas+')':''}`);
-  toast(`Stock de "${p.nombre}" en ${localNombre(ST.localActivo)} → ${stockActual+cant} u.`,'success');
+  const p=await dbGet('productos',prodId);p.stock=(p.stock||0)+cant;await dbPut('productos',p);
+  await logAct(`Ingresó ${cant} unidades de "${p.nombre}" al stock${notas?' ('+notas+')':''}`);
+  toast(`Stock de "${p.nombre}" → ${p.stock} u.`,'success');
   closeModal('modalIngresoProducto');renderCatalogo();populateSels();
 }
 // ══ CLIENTES ══
@@ -2423,11 +2467,7 @@ async function guardarCobro(){
   for(const item of ST.cobroItems){
     if(item.tipo==='producto'&&item.id){
       const p=await dbGet('productos',item.id);
-      if(p){
-        const stk=getStockLocal(p);
-        if(stk>0) setStockLocal(p, Math.max(0,stk-1));
-        await dbPut('productos',p);
-      }
+      if(p){const stk=getStockLocal(p);if(stk>0)setStockLocal(p,stk-1);await dbPut('productos',p);}
     }
   }
   const facturaAmt=parseFloat(document.getElementById('cobroFactura')?.value)||0;
@@ -3095,10 +3135,17 @@ async function populateSels(){
   const cSel=document.getElementById('cobroServicio');
   if(cSel)cSel.innerHTML='<option value="">Seleccionar servicio...</option>'+svcs.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')).map(s=>`<option value='${JSON.stringify({id:s.id,nombre:s.nombre,precio:s.precio,comision:s.comision??50})}'>${s.nombre} — ${fmt(s.precio)}</option>`).join('');
   const pSel=document.getElementById('cobroProducto');
-  if(pSel)pSel.innerHTML='<option value="">Seleccionar producto...</option>'+[...prods].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')).map(p=>`<option value='${JSON.stringify({id:p.id,nombre:p.nombre,precio:p.precio,comisionable:!!p.comisionable})}'>${p.nombre} — ${fmt(p.precio)} (Stock: ${p.stock||0})${p.comisionable?' ★':''}</option>`).join('');
+  if(pSel)pSel.innerHTML='<option value="">Seleccionar producto...</option>'+[...prods].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es')).map(p=>`<option value='${JSON.stringify({id:p.id,nombre:p.nombre,precio:p.precio,comisionable:!!p.comisionable})}'>${p.nombre} — ${fmt(p.precio)} (Stock: ${getStockLocal(p)})${p.comisionable?' ★':''}</option>`).join('');
   // Reporte: solo barberos de locales permitidos
   const rb=document.getElementById('reporteBarbero');
   if(rb)rb.innerHTML='<option value="0">Todos los barberos</option>'+bo;
+  // Poblar selectores de sucursal en modales (turno y barbero)
+  const sucOpts=SUCURSAL_IDS().map(id=>`<option value="${id}">${localNombre(id)}</option>`).join('');
+  const sucOptsConAmbas='<option value="0">Ambas</option>'+sucOpts;
+  const tLocal=document.getElementById('turnoLocal');
+  if(tLocal)tLocal.innerHTML=sucOpts;
+  const bLocal=document.getElementById('barberoLocal');
+  if(bLocal)bLocal.innerHTML=sucOptsConAmbas;
   // Pre-cache selects for search filters
   ['cobroServicio','cobroProducto','cobroCliente','turnoCliente','turnoServicio'].forEach(id=>{
     delete _selCache[id];
@@ -3776,35 +3823,52 @@ async function saveCajaTurno(updates){
 
 async function mostrarCajaInicialSiNecesario(){
   if(!ST.user||ST.user.rol==='admin')return;
-  const key=getCajaKey();
-  if(localStorage.getItem(key)==='done')return;
-  // Verificar si ya existe en caja_turnos
-  const ct=await getCajaTurno(hoy(),ST.localActivo,getTurnoActual());
-  if(ct&&ct.cajaInicialConfirmada){localStorage.setItem(key,'done');return;}
-  // Si ya tenía caja inicial en arqueos (migración), usar ese valor
-  const arqs=await dbAll('arqueos');
-  const td=hoy();const turno=getTurnoActual();
-  const exArq=arqs.find(a=>a.fecha===td&&Number(a.local)===Number(ST.localActivo)&&a.turno==turno);
-  if(exArq&&(exArq.cajaInicial||exArq.caja_inicial)){
-    // Migrar a caja_turnos
-    await saveCajaTurno({cajaInicial:exArq.cajaInicial||exArq.caja_inicial||0,cajaInicialConfirmada:true});
-    localStorage.setItem(key,'done');return;
+  const permitidos=getLocalesPermitidos();
+  const turno=getTurnoActual();
+  // Para cada sucursal permitida, verificar si ya tiene caja inicial
+  const pendientes=[];
+  for(const lid of permitidos){
+    const key='tajos_caja_'+hoy()+'_t'+turno+'_l'+lid;
+    if(localStorage.getItem(key)==='done') continue;
+    const ct=await getCajaTurno(hoy(),lid,turno);
+    if(ct&&ct.cajaInicialConfirmada){localStorage.setItem(key,'done');continue;}
+    pendientes.push(lid);
   }
+  if(!pendientes.length)return;
+
+  // Poblar selector de sucursal
+  const sel=document.getElementById('cajaInicialSucursal');
+  const grp=document.getElementById('cajaInicialSucursalGroup');
+  if(sel){
+    sel.innerHTML=pendientes.map(lid=>`<option value="${lid}">${localNombre(lid)}</option>`).join('');
+  }
+  // Mostrar selector solo si hay más de una sucursal pendiente
+  if(grp) grp.style.display=pendientes.length>1?'block':'none';
+
+  // Info contextual
+  const turnoLabel=turno===1?'Turno 1 (9–14h)':'Turno 2 (14–20h)';
   const info=document.getElementById('cajaInicialInfo');
-  const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
-  if(info)info.textContent=localNombre(ST.localActivo)+' · '+turnoLabel+' · '+hoy();
-  const el=document.getElementById('modalCajaInicial');
-  if(el)el.classList.add('visible');
+  if(info) info.textContent=turnoLabel+' · '+hoy();
+
+  document.getElementById('cajaInicialMonto').value='';
+  document.getElementById('modalCajaInicial').classList.add('visible');
 }
 
 async function guardarCajaInicial(){
   const monto=parseFloat(document.getElementById('cajaInicialMonto').value)||0;
   const nota=document.getElementById('cajaInicialNota').value.trim();
-  await saveCajaTurno({cajaInicial:monto,cajaInicialConfirmada:true});
-  localStorage.setItem(getCajaKey(),'done');
-  await logAct('Registró caja inicial: '+fmt(monto)+' · '+(getTurnoActual()===1?'Turno 1':'Turno 2'));
-  toast('Caja inicial registrada: '+fmt(monto),'success');
+  // Leer sucursal: del selector si está visible, o del localActivo
+  const grp=document.getElementById('cajaInicialSucursalGroup');
+  const sel=document.getElementById('cajaInicialSucursal');
+  const localCaja=(grp&&grp.style.display!=='none'&&sel)?Number(sel.value):Number(ST.localActivo);
+  await saveCajaTurno({cajaInicial:monto,cajaInicialConfirmada:true,local:localCaja});
+  const key='tajos_caja_'+hoy()+'_t'+getTurnoActual()+'_l'+localCaja;
+  localStorage.setItem(key,'done');
+  await logAct(`Registró caja inicial: ${fmt(monto)} · ${localNombre(localCaja)} · Turno ${getTurnoActual()}`);
+  toast(`Caja inicial ${localNombre(localCaja)}: ${fmt(monto)}`,'success');
   document.getElementById('modalCajaInicial').classList.remove('visible');
+  // Si hay más sucursales pendientes, volver a mostrar el modal
+  setTimeout(mostrarCajaInicialSiNecesario,400);
   refreshCaja();
 }
 
@@ -3815,40 +3879,43 @@ function omitirCajaInicial(){
 
 // ══ INVENTARIO ══
 async function renderInventario(){
-  const prods=await dbAll('productos');
+  const todosProds=await dbAll('productos');
+  const prods=todosProds.filter(p=>p.activo!==false);
   const lf=+document.getElementById('invFiltroLocal')?.value||0;
   const catF=document.getElementById('invFiltroCategoria')?.value||'';
 
+  // Poblar selector de sucursal dinámicamente
+  const localSel=document.getElementById('invFiltroLocal');
+  if(localSel){
+    const curL=localSel.value;
+    localSel.innerHTML='<option value="0">Todas las sucursales</option>'+
+      SUCURSAL_IDS().map(id=>`<option value="${id}">${localNombre(id)}</option>`).join('');
+    if(curL)localSel.value=curL;
+  }
+
   // Poblar selector de categorías
-  const cats=[...new Set(prods.map(p=>p.categoria||'Sin categoría').filter(Boolean))].sort();
+  const cats=[...new Set(prods.map(p=>p.categoria||'Sin categoría'))].sort();
   const catSel=document.getElementById('invFiltroCategoria');
   if(catSel){
-    const cur=catSel.value;
+    const curC=catSel.value;
     catSel.innerHTML='<option value="">Todas las categorías</option>'+
-      cats.map(c=>`<option value="${c}"${c===cur?' selected':''}>${c}</option>`).join('');
+      cats.map(c=>`<option value="${c}"${c===curC?' selected':''}>${c}</option>`).join('');
   }
 
   // Filtrar por categoría
-  let lista=prods.filter(p=>p.activo!==false);
-  if(catF)lista=lista.filter(p=>(p.categoria||'Sin categoría')===catF);
-
-  // Ordenar: categoría → nombre
+  let lista=catF?prods.filter(p=>(p.categoria||'Sin categoría')===catF):prods;
   lista.sort((a,b)=>{
-    const ca=(a.categoria||'Sin categoría').localeCompare(b.categoria||'Sin categoría','es');
-    return ca!==0?ca:a.nombre.localeCompare(b.nombre,'es');
+    const c=(a.categoria||'Sin categoría').localeCompare(b.categoria||'Sin categoría','es');
+    return c!==0?c:a.nombre.localeCompare(b.nombre,'es');
   });
 
   // Función de stock según filtro de local
-  const getStock=p=>{
-    if(lf===1)return getStockLocal(p,1);
-    if(lf===2)return getStockLocal(p,2);
-    return stockTotalProducto(p);
-  };
+  const getStk=p=>lf>0?getStockLocal(p,lf):stockTotalProducto(p);
 
   // Stats
-  const sinStock=lista.filter(p=>getStock(p)<=0).length;
-  const bajo=lista.filter(p=>getStock(p)>0&&getStock(p)<5).length;
-  const valorTotal=lista.reduce((s,p)=>s+getStock(p)*p.precio,0);
+  const sinStock=lista.filter(p=>getStk(p)<=0).length;
+  const bajo=lista.filter(p=>getStk(p)>0&&getStk(p)<5).length;
+  const valorTotal=lista.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0);
   document.getElementById('invStatTotal').textContent=lista.length;
   document.getElementById('invStatSinStock').textContent=sinStock;
   document.getElementById('invStatBajo').textContent=bajo;
@@ -3859,137 +3926,110 @@ async function renderInventario(){
     return;
   }
 
+  // Cabeceras de stock dinámicas
+  const stockHeaders=lf>0
+    ?`<th>${localNombre(lf)}</th>`
+    :SUCURSAL_IDS().map(id=>`<th>${localNombre(id)}</th>`).join('')+'<th>Total</th>';
+
   // Agrupar por categoría
   const grupos={};
-  lista.forEach(p=>{
-    const cat=p.categoria||'Sin categoría';
-    if(!grupos[cat])grupos[cat]=[];
-    grupos[cat].push(p);
-  });
-
-  const localHeader=lf===0?'<th>Central</th><th>Superseis</th><th>Total</th>':'<th>Stock</th>';
+  lista.forEach(p=>{const cat=p.categoria||'Sin categoría';if(!grupos[cat])grupos[cat]=[];grupos[cat].push(p);});
 
   document.getElementById('invContenido').innerHTML=Object.entries(grupos).map(([cat,items])=>`
     <div style="margin-bottom:28px">
       <div style="font-family:var(--font-cond);font-size:.8rem;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;padding:8px 0 6px;border-bottom:1px solid var(--border-strong);margin-bottom:8px">${cat}</div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Producto</th><th>Precio</th>${localHeader}<th>Valor</th><th>Estado</th></tr></thead>
-          <tbody>
-            ${items.map(p=>{
-              const c1=getStockLocal(p,1),c2=getStockLocal(p,2),tot=stockTotalProducto(p);
-              const stk=lf===0?tot:lf===1?c1:c2;
-              const sc=stk<=0?'stock-out':stk<5?'stock-low':'stock-ok';
-              const stockCols=lf===0
-                ?`<td style="font-family:var(--font-cond);font-weight:700;text-align:center">${c1}</td><td style="font-family:var(--font-cond);font-weight:700;text-align:center">${c2}</td><td style="font-family:var(--font-cond);font-weight:700;text-align:center">${tot}</td>`
-                :`<td style="font-family:var(--font-cond);font-weight:700;text-align:center">${stk}</td>`;
-              return `<tr>
-                <td><strong>${p.nombre}</strong>${p.descripcion?`<div style="font-size:.75rem;color:var(--text-muted)">${p.descripcion}</div>`:''}</td>
-                <td style="font-family:var(--font-cond);color:var(--text-muted)">${fmt(p.precio)}</td>
-                ${stockCols}
-                <td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(stk*p.precio)}</td>
-                <td><span class="stock-badge ${sc}">${stk<=0?'Sin stock':stk<5?'Stock bajo':'OK'}</span></td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Producto</th><th>Precio</th>${stockHeaders}<th>Valor</th><th>Estado</th></tr></thead>
+        <tbody>${items.map(p=>{
+          const tot=stockTotalProducto(p);
+          const stk=getStk(p);
+          const sc=stk<=0?'stock-out':stk<5?'stock-low':'stock-ok';
+          const stockCols=lf>0
+            ?`<td style="text-align:center;font-family:var(--font-cond);font-weight:700">${stk}</td>`
+            :SUCURSAL_IDS().map(id=>`<td style="text-align:center;font-family:var(--font-cond)">${getStockLocal(p,id)}</td>`).join('')+
+             `<td style="text-align:center;font-family:var(--font-cond);font-weight:700">${tot}</td>`;
+          return `<tr>
+            <td><strong>${p.nombre}</strong>${p.descripcion?`<div style="font-size:.75rem;color:var(--text-muted)">${p.descripcion}</div>`:''}</td>
+            <td style="font-family:var(--font-cond);color:var(--text-muted)">${fmt(p.precio)}</td>
+            ${stockCols}
+            <td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(tot*p.precio)}</td>
+            <td><span class="stock-badge ${sc}">${stk<=0?'Sin stock':stk<5?'Stock bajo':'OK'}</span></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
     </div>`).join('');
 }
 
-// ── Exportar XLSX ──
 async function exportarInventarioXLSX(){
   const prods=(await dbAll('productos')).filter(p=>p.activo!==false)
     .sort((a,b)=>{const c=(a.categoria||'').localeCompare(b.categoria||'','es');return c!==0?c:a.nombre.localeCompare(b.nombre,'es');});
   const lf=+document.getElementById('invFiltroLocal')?.value||0;
+  const ids=SUCURSAL_IDS();
+  const sucHeaders=lf>0?[localNombre(lf)]:ids.map(id=>localNombre(id)).concat(['Total']);
 
-  // Construir CSV que Excel abre perfectamente
-  const fmtN=n=>Math.round(n);
   const rows=[
-    ['INVENTARIO TAJOS','','','','','',''],
-    [`Generado: ${new Date().toLocaleString('es-PY')}`,'','','','','',''],
-    [''],
-    ['Categoría','Producto','Descripción','Precio (Gs.)','Central','Superseis','Total','Valor (Gs.)'],
+    [`INVENTARIO TAJOS — ${new Date().toLocaleString('es-PY')}`],
+    [],
+    ['Categoría','Producto','Descripción','Precio (Gs.)',...sucHeaders,'Valor (Gs.)'],
   ];
-  let catActual='';
+  let catAct='';
   prods.forEach(p=>{
     const cat=p.categoria||'Sin categoría';
-    if(cat!==catActual){rows.push([cat,'','','','','','','']);catActual=cat;}
-    const c1=getStockLocal(p,1),c2=getStockLocal(p,2),tot=c1+c2;
-    rows.push(['',p.nombre,p.descripcion||'',fmtN(p.precio),c1,c2,tot,fmtN(tot*p.precio)]);
+    if(cat!==catAct){rows.push([cat]);catAct=cat;}
+    const stockCols=lf>0
+      ?[getStockLocal(p,lf)]
+      :ids.map(id=>getStockLocal(p,id)).concat([stockTotalProducto(p)]);
+    rows.push(['',p.nombre,p.descripcion||'',Math.round(p.precio),...stockCols,Math.round(stockTotalProducto(p)*p.precio)]);
   });
+  rows.push([]);
+  rows.push(['','TOTAL','','','','','',Math.round(prods.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0))]);
 
-  // Totales
-  rows.push(['']);
-  const totVal=prods.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0);
-  rows.push(['','TOTAL','','','','','',fmtN(totVal)]);
-
-  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`inventario_tajos_${hoy()}.csv`;
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),download:`inventario_tajos_${hoy()}.csv`});
   a.click();
-  toast('Inventario exportado como CSV (compatible con Excel)','success');
+  toast('Inventario exportado (compatible con Excel)','success');
 }
 
-// ── Exportar PDF (ventana de impresión) ──
 async function exportarInventarioPDF(){
   const prods=(await dbAll('productos')).filter(p=>p.activo!==false)
     .sort((a,b)=>{const c=(a.categoria||'').localeCompare(b.categoria||'','es');return c!==0?c:a.nombre.localeCompare(b.nombre,'es');});
   const lf=+document.getElementById('invFiltroLocal')?.value||0;
-  const localLabel=lf===0?'Todas las sucursales':localNombre(lf);
+  const ids=SUCURSAL_IDS();
+  const localLabel=lf>0?localNombre(lf):'Todas las sucursales';
+  const sucThs=lf>0?`<th>${localNombre(lf)}</th>`:ids.map(id=>`<th>${localNombre(id)}</th>`).join('')+'<th>Total</th>';
 
   const grupos={};
-  prods.forEach(p=>{const cat=p.categoria||'Sin categoría';if(!grupos[cat])grupos[cat]=[];grupos[cat].push(p);});
-
-  const colHeaders=lf===0
-    ?'<th>Central</th><th>Superseis</th><th>Total</th>'
-    :`<th>Stock (${localLabel})</th>`;
+  prods.forEach(p=>{const c=p.categoria||'Sin categoría';if(!grupos[c])grupos[c]=[];grupos[c].push(p);});
 
   const tablas=Object.entries(grupos).map(([cat,items])=>`
-    <h3 style="margin:18px 0 6px;font-size:11pt;color:#1a3a6b;border-bottom:1px solid #c5d0e0;padding-bottom:4px">${cat}</h3>
-    <table>
-      <thead><tr><th>Producto</th><th>Precio</th>${colHeaders}<th>Valor</th></tr></thead>
-      <tbody>
-        ${items.map(p=>{
-          const c1=getStockLocal(p,1),c2=getStockLocal(p,2),tot=c1+c2;
-          const stk=lf===0?tot:lf===1?c1:c2;
-          const stockCols=lf===0
-            ?`<td>${c1}</td><td>${c2}</td><td><strong>${tot}</strong></td>`
-            :`<td><strong>${stk}</strong></td>`;
-          return `<tr><td>${p.nombre}</td><td>${fmt(p.precio)}</td>${stockCols}<td>${fmt(stk*p.precio)}</td></tr>`;
-        }).join('')}
-      </tbody>
-    </table>`).join('');
+    <h3>${cat}</h3>
+    <table><thead><tr><th>Producto</th><th>Precio</th>${sucThs}<th>Valor</th></tr></thead>
+    <tbody>${items.map(p=>{
+      const tot=stockTotalProducto(p);
+      const stockCols=lf>0
+        ?`<td>${getStockLocal(p,lf)}</td>`
+        :ids.map(id=>`<td>${getStockLocal(p,id)}</td>`).join('')+`<td><strong>${tot}</strong></td>`;
+      return `<tr><td>${p.nombre}</td><td>${fmt(p.precio)}</td>${stockCols}<td>${fmt(tot*p.precio)}</td></tr>`;
+    }).join('')}</tbody></table>`).join('');
 
   const totVal=prods.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Inventario TAJOS — ${hoy()}</title>
-  <style>
-    body{font-family:Arial,sans-serif;font-size:10pt;color:#1a1a2e;margin:24px}
-    h1{font-size:16pt;color:#1a3a6b;margin-bottom:4px}
-    .sub{font-size:9pt;color:#666;margin-bottom:20px}
-    table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:9pt}
-    th{background:#1a3a6b;color:#fff;padding:5px 8px;text-align:left}
-    td{padding:4px 8px;border-bottom:1px solid #e0e6f0}
-    tr:nth-child(even) td{background:#f4f7fc}
-    .total{font-weight:700;border-top:2px solid #1a3a6b}
-    @media print{body{margin:12px}}
-  </style></head><body>
+  const w=window.open('','_blank','width=960,height=720');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Inventario TAJOS</title>
+  <style>body{font-family:Arial,sans-serif;font-size:10pt;margin:24px;color:#1a1a2e}
+  h1{font-size:15pt;color:#1a3a6b}h3{font-size:10pt;color:#1a3a6b;border-bottom:1px solid #c5d0e0;margin:16px 0 4px}
+  .sub{font-size:9pt;color:#666;margin-bottom:18px}
+  table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:4px}
+  th{background:#1a3a6b;color:#fff;padding:5px 8px;text-align:left}
+  td{padding:4px 8px;border-bottom:1px solid #e0e6f0}tr:nth-child(even)td{background:#f4f7fc}
+  .tot{font-weight:700;border-top:2px solid #1a3a6b}@media print{body{margin:10px}}</style>
+  </head><body>
   <h1>📦 Inventario TAJOS</h1>
-  <div class="sub">${localLabel} · Generado: ${new Date().toLocaleString('es-PY')}</div>
+  <div class="sub">${localLabel} · ${new Date().toLocaleString('es-PY')}</div>
   ${tablas}
-  <table style="margin-top:16px"><tbody>
-    <tr class="total"><td colspan="${lf===0?4:3}"><strong>VALOR TOTAL INVENTARIO</strong></td><td><strong>${fmt(totVal)}</strong></td></tr>
-  </tbody></table>
-  </body></html>`;
-
-  const w=window.open('','_blank','width=900,height=700');
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-  setTimeout(()=>w.print(),400);
+  <table style="margin-top:14px"><tbody>
+    <tr class="tot"><td colspan="${lf>0?3:ids.length+3}"><strong>VALOR TOTAL INVENTARIO</strong></td><td><strong>${fmt(totVal)}</strong></td></tr>
+  </tbody></table></body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),350);
 }
 
 // ══ INIT ══
@@ -4123,6 +4163,11 @@ initDB().then(async()=>{
     <div class="modal-body">
       <div class="alert alert-info" style="margin-bottom:16px">Ingresá el monto de billetes disponibles para dar vuelto al inicio de este turno.</div>
       <div id="cajaInicialInfo" style="font-family:var(--font-cond);font-size:.85rem;color:var(--text-muted);margin-bottom:14px"></div>
+      <!-- Selector de sucursal: solo visible para cajeros con acceso a más de una -->
+      <div class="form-group" id="cajaInicialSucursalGroup" style="display:none">
+        <label class="form-label">Sucursal *</label>
+        <select class="form-control" id="cajaInicialSucursal"></select>
+      </div>
       <div class="form-group">
         <label class="form-label">Monto caja inicial (Gs.) *</label>
         <input type="number" class="form-control" id="cajaInicialMonto" placeholder="Ej: 200000" min="0" style="font-size:1.1rem;padding:12px">
