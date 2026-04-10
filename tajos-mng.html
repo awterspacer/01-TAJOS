@@ -277,6 +277,7 @@ tbody tr:last-child td{border-bottom:none;}
   <div class="nav-item admin-only" data-page="barberos"><span class="icon">💈</span>Barberos</div>
   <div class="nav-item" data-page="servicios"><span class="icon">🗂</span>Catálogo</div>
   <div class="nav-item" data-page="consumos"><span class="icon">🧴</span>Consumos</div>
+  <div class="nav-item admin-only" data-page="inventario"><span class="icon">📦</span>Inventario</div>
   <div class="sidebar-section-label admin-only">Admin</div>
   <div class="nav-item admin-only" data-page="usuarios"><span class="icon">🔐</span>Usuarios</div>
   <div class="nav-item admin-only" data-page="historial"><span class="icon">📜</span>Historial</div>
@@ -574,6 +575,32 @@ tbody tr:last-child td{border-bottom:none;}
   </div>
 </div>
 
+
+<!-- INVENTARIO -->
+<div class="page" id="page-inventario">
+  <div class="section-header">
+    <div><div class="section-title">INVENTARIO</div><div class="section-sub">Stock de productos por sucursal</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select class="form-control" id="invFiltroLocal" style="width:160px" onchange="renderInventario()">
+        <option value="0">Todas las sucursales</option>
+        <option value="1">Central</option>
+        <option value="2">Superseis</option>
+      </select>
+      <select class="form-control" id="invFiltroCategoria" style="width:180px" onchange="renderInventario()">
+        <option value="">Todas las categorías</option>
+      </select>
+      <button class="btn btn-outline" onclick="exportarInventarioCSV()">📊 Exportar XLSX</button>
+      <button class="btn btn-outline" onclick="exportarInventarioPDF()">🖨 Exportar PDF</button>
+    </div>
+  </div>
+  <div class="grid-4" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-label">Total productos</div><div class="stat-value" id="invStatTotal">0</div><div class="stat-icon">📦</div></div>
+    <div class="stat-card"><div class="stat-label">Sin stock</div><div class="stat-value" id="invStatSinStock" style="color:var(--danger)">0</div><div class="stat-icon">⚠</div></div>
+    <div class="stat-card"><div class="stat-label">Stock bajo (&lt;5)</div><div class="stat-value" id="invStatBajo" style="color:#e67e22">0</div><div class="stat-icon">📉</div></div>
+    <div class="stat-card"><div class="stat-label">Valor total</div><div class="stat-value" id="invStatValor" style="font-size:1.4rem">Gs. 0</div><div class="stat-icon">💰</div></div>
+  </div>
+  <div class="card"><div id="invContenido"></div></div>
+</div>
 
 <!-- GIFTCARDS -->
 <div class="page" id="page-giftcards">
@@ -905,29 +932,29 @@ tbody tr:last-child td{border-bottom:none;}
             <div style="font-family:var(--font-cond);font-weight:700">JSON</div>
             <div style="font-size:.72rem;color:var(--text-muted);margin-top:3px">Liviano · Recomendado</div>
           </div>
-          <div class="pay-method" id="fmtXML" onclick="selFmt('XML')" style="flex:1">
-            <span style="font-size:1.4rem;display:block;margin-bottom:4px">&lt;/&gt;</span>
-            <div style="font-family:var(--font-cond);font-weight:700">XML</div>
-            <div style="font-size:.72rem;color:var(--text-muted);margin-top:3px">Legible · Compatible</div>
+          <div class="pay-method" id="fmtXLSX" onclick="selFmt('XLSX')" style="flex:1">
+            <span style="font-size:1.4rem;display:block;margin-bottom:4px">📊</span>
+            <div style="font-family:var(--font-cond);font-weight:700">XLSX</div>
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:3px">Excel · Filtrable</div>
           </div>
         </div>
         <div id="backupResumen" style="background:var(--bg-raised);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:.85rem;color:var(--text-muted)">Cargando...</div>
         <button class="btn btn-gold" style="width:100%;padding:12px" onclick="exportarBackup()">⬇ Descargar Backup</button>
         <div class="divider" style="margin:14px 0"></div>
         <div style="font-family:var(--font-cond);font-size:.8rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">🗂 Archivado de Historial</div>
-        <div class="alert alert-warning" style="margin-bottom:10px;font-size:.82rem">Exporta como XML y elimina de la base de datos todos los registros del historial con más de 30 días.</div>
+        <div class="alert alert-warning" style="margin-bottom:10px;font-size:.82rem">Exporta como XLSX y elimina de la base de datos todos los registros del historial con más de 30 días.</div>
         <button class="btn btn-outline" style="width:100%" onclick="archivarHistorialAntiguo()">📦 Archivar historial &gt;30 días</button>
       </div>
       <div id="backupTabImportar" style="display:none">
         <div class="alert alert-danger" style="margin-bottom:14px">⚠ <strong>Atención:</strong> Importar un backup <strong>reemplazará todos los datos actuales</strong>.</div>
-        <div class="form-group"><label class="form-label">Seleccionar archivo de backup</label><input type="file" class="form-control" id="backupFileInput" accept=".json,.xml" onchange="previewBackup(this)"></div>
+        <div class="form-group"><label class="form-label">Seleccionar archivo de backup</label><input type="file" class="form-control" id="backupFileInput" accept=".json,.csv" onchange="previewBackup(this)"></div>
         <div id="backupPreview" style="display:none;background:var(--bg-raised);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:.85rem"></div>
         <button class="btn btn-danger" style="width:100%;padding:12px" id="btnImportar" disabled onclick="importarBackup()">⬆ Restaurar desde Backup</button>
       </div>
       <div id="backupTabInfo" style="display:none">
         <div class="card" style="margin-bottom:14px"><div class="card-title">☁ ¿Cómo funciona el almacenamiento?</div><p style="font-size:.88rem;color:var(--text-muted);line-height:1.6">Los datos se guardan en <strong style="color:var(--gold-light)">Supabase (nube)</strong> como fuente principal. El navegador mantiene una copia local en <strong style="color:var(--text-main)">IndexedDB</strong> como caché y fallback offline. Cuando la conexión vuelve, las operaciones pendientes se sincronizan automáticamente.</p></div>
         <div class="card" style="margin-bottom:14px"><div class="card-title">⚠ Consideraciones</div><div style="font-size:.85rem;color:var(--text-muted);line-height:1.8">• Sin conexión a internet, los datos se guardan <strong style="color:var(--gold-light)">localmente y se sincronizan al reconectar</strong><br>• La caché local se actualiza automáticamente al abrir cada sección<br>• Si limpiás la caché del navegador, los datos en Supabase no se pierden</div></div>
-        <div class="card"><div class="card-title">✅ Buenas prácticas</div><div style="font-size:.85rem;color:var(--text-muted);line-height:1.8">• Aún se recomienda exportar un backup <strong style="color:var(--text-main)">al final de cada jornada</strong> como respaldo adicional<br>• Usa JSON para uso general, XML si necesitas abrir en Excel<br>• El indicador verde/rojo en la esquina inferior derecha muestra el estado de conexión con Supabase</div></div>
+        <div class="card"><div class="card-title">✅ Buenas prácticas</div><div style="font-size:.85rem;color:var(--text-muted);line-height:1.8">• Aún se recomienda exportar un backup <strong style="color:var(--text-main)">al final de cada jornada</strong> como respaldo adicional<br>• Usa JSON para respaldo técnico, XLSX para abrir en Excel con filtros<br>• El indicador verde/rojo en la esquina inferior derecha muestra el estado de conexión con Supabase</div></div>
       </div>
     </div>
   </div>
@@ -947,7 +974,7 @@ tbody tr:last-child td{border-bottom:none;}
     <div class="modal-footer" style="justify-content:space-between">
       <button class="btn btn-ghost" onclick="salirSinBackup()">Salir sin backup</button>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-outline" onclick="exportarRapido('XML')">⬇ XML</button>
+        <button class="btn btn-outline" onclick="exportarRapido('XLSX')">⬇ XLSX</button>
         <button class="btn btn-gold" onclick="exportarRapido('JSON')">⬇ JSON y Salir</button>
       </div>
     </div>
@@ -996,9 +1023,7 @@ tbody tr:last-child td{border-bottom:none;}
 // ══════════════════════════════════════════════════════════════
 // [1] CONFIG & SUPABASE
 const SUPA_URL='https://tgwhegmgchnttsmrhcfc.supabase.co';
-
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnd2hlZ21nY2hudHRzbXJoY2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4ODg1ODgsImV4cCI6MjA4OTQ2NDU4OH0.3g20p6yGber_j6HNB5oQqesOm_YgQ_fo9P2Yl2jGPbM';
-
 
 // ══════════════════════════════════════════════════════════════
 // MAPA: nombre de store (IndexedDB) → nombre de tabla (Supabase)
@@ -1047,8 +1072,6 @@ const FIELD_TO_DB = {
   efectivoEntregado:'efectivo_entregado',
   // Caja turnos
   cajaInicialConfirmada:'caja_inicial_confirmada',
-  horaInicio:'hora_inicio',
-  horaCierre:'hora_cierre',
 };
 const FIELD_FROM_DB = Object.fromEntries(Object.entries(FIELD_TO_DB).map(([k,v])=>[v,k]));
 
@@ -1063,7 +1086,7 @@ const SUPA_COLS={
   usuarios:new Set(['id','login','password','nombre','apellido','email','rol','estado','acceso','ultimo_acceso','created_at','updated_at']),
   historial:new Set(['id','usuario','nombre','rol','accion','fecha','hora','ts']),
   arqueos:new Set(['id','fecha','local','turno','turno_label','cajero','caja_inicial','detalle','total','nota','notas','verificado','verificado_por','verificado_at','egresos_efectivo','efectivo_entregado','cerrado','created_at']),
-  caja_turnos:new Set(['id','fecha','local','turno','turno_label','cajero','caja_inicial','caja_inicial_confirmada','egresos_efectivo','hora_inicio','hora_cierre','created_at','updated_at']),
+  caja_turnos:new Set(['id','fecha','local','turno','turno_label','cajero','caja_inicial','caja_inicial_confirmada','egresos_efectivo','created_at','updated_at']),
   adelantos:new Set(['id','barbero_id','barbero_nombre','monto_solicitado','monto_aprobado','estado','fecha_solicitud','nota_solicitud','nota_admin','fecha_aprobacion','ts']),
   egresos:new Set(['id','barbero_id','barbero_nombre','producto_id','producto','cantidad','monto','nota','registrado_por','fecha','created_at']),
   giftcards:new Set(['id','codigo','cliente_id','valor','saldo','metodo_pago','nota','estado','fecha','ultimo_uso','created_at']),
@@ -1090,8 +1113,6 @@ function fromDbObj(obj){
   }
   // asegurar que 'id' siempre sea número
   if(r.id!==undefined)r.id=Number(r.id);
-  // Normalizar fecha: Supabase devuelve 'YYYY-MM-DDT00:00:00' si la columna es timestamp
-  if(r.fecha&&typeof r.fecha==='string'&&r.fecha.length>10)r.fecha=r.fecha.slice(0,10);
   // Supabase puede devolver columnas JSONB como string — parsear si es necesario
   const jsonCols=['pagos','items','detalle','egresosEfectivo','egresos_efectivo','acceso'];
   jsonCols.forEach(col=>{
@@ -1261,13 +1282,14 @@ async function dbAdd(store,data){
       const rows=await supaFetch('POST',tbl,null,body);
       if(rows&&rows.length){
         const saved=fromDbObj(rows[0]);
-        _idbPut(store,saved).catch(()=>{});
+        // Supabase guardó correctamente — solo actualizar cache local, NO encolar offline
+        _idbAdd(store,saved).catch(()=>{});
         return saved.id;
       }
+      // Supabase respondió OK pero sin datos (no debería pasar con Prefer:return=representation)
+      // En este caso tampoco encolamos para evitar duplicado: relanzar para que caiga al fallback
       throw new Error('Supabase POST returned empty');
-    }catch(e){
-      console.error(`[dbAdd] Supabase error tabla=${tbl}:`,e.message);
-    }
+    }catch(e){console.warn('dbAdd Supabase error, guardando offline:',e);}
   }
   // Solo llegar aquí si estamos offline O si Supabase falló antes de confirmar el guardado
   const localId=await _idbAdd(store,{...data});
@@ -1304,7 +1326,7 @@ async function dbDel(store,id){
 }
 
 // ══ STATE ══
-const ST={localActivo:1,agendaFecha:new Date(),turnoServTemp:[],cobroItems:[],cobroPagos:[],user:null,_gcAplicada:null,_pendingServCat:null,_pendingProdCat:null,turnoActivo:null};
+const ST={localActivo:1,agendaFecha:new Date(),turnoServTemp:[],cobroItems:[],cobroPagos:[],user:null,_gcAplicada:null,_pendingServCat:null,_pendingProdCat:null};
 const HORAS=[];for(let h=8;h<=20;h++){HORAS.push(String(h).padStart(2,'0')+':00');if(h<20)HORAS.push(String(h).padStart(2,'0')+':30');}
 // METODOS: fallback hardcodeado con IDs descriptivos (siempre se usan como clave en cobros)
 const METODOS_DEFAULT=[
@@ -1381,10 +1403,7 @@ async function doLogin(){
 }
 
 function showApp(){
-  if(!ST.turnoActivo) ST.turnoActivo=new Date().getHours()<14?1:2;
-  sessionStorage.setItem('tajos_uid',   String(ST.user.id));
-  sessionStorage.setItem('tajos_turno', String(ST.turnoActivo));
-  if(ST.user.rol!=='admin') saveCajaTurno({horaInicio:new Date().toTimeString().slice(0,5)}).catch(()=>{});
+  sessionStorage.setItem('tajos_uid', String(ST.user.id));
   document.getElementById('loginScreen').classList.remove('visible');
   document.getElementById('app').classList.add('visible');
   const u=ST.user;
@@ -1415,10 +1434,10 @@ function showApp(){
   _aplicarRestriccionReporteLocal();
   navigate('dashboard');
   populateSels();
-  setTimeout(mostrarCajaInicialSiNecesario,600);
+  // mostrarCajaInicialSiNecesario() deshabilitado — caja se registra desde el arqueo
 }
 
-function getTurnoLabel(){return`Cajero · Turno ${getTurnoActual()}`;}
+function getTurnoLabel(){const h=new Date().getHours();return h<14?'Cajero · Turno 1 (8–14h)':'Cajero · Turno 2 (14–20h)';}
 
 // Devuelve array de locales permitidos para el usuario actual.
 // Admin → [1,2]. Cajero ambas → [1,2]. Cajero solo central → [1]. Cajero solo superseis → [2].
@@ -1463,9 +1482,7 @@ async function logoutConfirm(){await showRecordatorioBackup();}
 async function doLogout(){
   await logAct('Cierre de sesión');
   ST.user=null;
-  ST.turnoActivo=null;
   sessionStorage.removeItem('tajos_uid');
-  sessionStorage.removeItem('tajos_turno');
   document.getElementById('app').classList.remove('visible');
   document.getElementById('loginScreen').classList.add('visible');
   document.getElementById('loginUser').value='';
@@ -1475,11 +1492,12 @@ async function doLogout(){
 async function logAct(accion){
   if(!ST.user)return;
   const u=ST.user;const n=new Date();
-  await dbAdd('historial',{usuario:u.login,nombre:u.nombre+' '+u.apellido,rol:u.rol,accion,fecha:toDS(n),hora:n.toTimeString().slice(0,5)});
+  // ts incluido para Supabase (columna NOT NULL sin default en algunos schemas)
+  await dbAdd('historial',{usuario:u.login,nombre:u.nombre+' '+u.apellido,rol:u.rol,accion,fecha:toDS(n),hora:n.toTimeString().slice(0,5),ts:n.toISOString()}).catch(e=>console.warn('logAct error:',e));
 }
 
 // ══ NAVIGATION ══
-const TITLES={dashboard:'Dashboard',agenda:'Agenda',caja:'Caja',clientes:'Clientes',barberos:'Barberos',servicios:'Catálogo',usuarios:'Usuarios',historial:'Historial',arqueos:'Arqueos',reportes:'Reportes'};
+const TITLES={dashboard:'Dashboard',agenda:'Agenda',caja:'Caja',clientes:'Clientes',barberos:'Barberos',servicios:'Catálogo',usuarios:'Usuarios',historial:'Historial',arqueos:'Arqueos',reportes:'Reportes',inventario:'Inventario'};
 document.querySelectorAll('.nav-item[data-page]').forEach(el=>el.addEventListener('click',()=>{navigate(el.dataset.page);closeSidebar();}));
 
 function navigate(page){
@@ -1501,6 +1519,7 @@ function navigate(page){
   if(page==='reportes'){_aplicarRestriccionReporteLocal();generarReporte();}
   if(page==='giftcards')renderGiftcards();
   if(page==='consumos')renderConsumos();
+  if(page==='inventario')renderInventario();
 }
 
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('visible');}
@@ -2396,10 +2415,7 @@ async function guardarCobro(){
     try{const turno=await dbGet('turnos',window._turnoACobrar);if(turno&&turno.estado!=='completado'){turno.estado='completado';await dbPut('turnos',turno);}}catch(e){}
     window._turnoACobrar=null;renderAgenda();
   }
-  ST.cobroItems=[];ST.cobroPagos=[];ST._gcAplicada=null;
-  await refreshDash();
-  await refreshCaja();
-  if(document.getElementById('page-barberos')?.classList.contains('active')) renderBarberos();
+  ST.cobroItems=[];ST.cobroPagos=[];ST._gcAplicada=null;refreshDash();refreshCaja();
 }
 
 async function refreshCaja(){
@@ -2419,7 +2435,7 @@ async function refreshCaja(){
   document.getElementById('cajaEfectivo').textContent=fmt(ef);
   document.getElementById('cajaDigital').textContent=fmt(dig);
   // Leer caja inicial siempre desde caja_turnos
-  const turno=await getTurnoDeRegistro();
+  const turno=getTurnoActual();
   const ct=await getCajaTurno(fecha,Number(ST.localActivo),Number(turno))||{cajaInicial:0,egresosEfectivo:[]};
   const cajaIni=ct.cajaInicial||ct.caja_inicial||0;
   const egresosEfCt=(ct.egresosEfectivo||[]).reduce((s,e)=>s+(e.monto||0),0);
@@ -2502,14 +2518,14 @@ async function verDetCobro(id){
 async function eliminarCobro(id){
   const co=await dbGet('cobros',id);if(!confirm('¿Eliminar este cobro?'))return;
   await dbDel('cobros',id);await logAct(`Eliminó cobro de ${fmt(co.total)}`);
-  toast('Cobro eliminado','info');await refreshCaja();await refreshDash();
+  toast('Cobro eliminado','info');refreshCaja();refreshDash();
 }
 // ══ ARQUEO ══
 async function renderArqueo(){
   const td=hoy();const cobros=await dbAll('cobros');
   const isAdmin=ST.user?.rol==='admin';
-  const turno=await getTurnoDeRegistro();
-  const turnoLabel=`Turno ${turno}`;
+  const turno=getTurnoActual();
+  const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
   const h=cobros.filter(c=>c.fecha===td&&Number(c.local)===Number(ST.localActivo));
   const arqs=await dbAll('arqueos');
   const aqActual=arqs.find(a=>a.fecha===td&&Number(a.local)===Number(ST.localActivo)&&a.turno==turno)||{notas:'',turno,cerrado:false};
@@ -2540,7 +2556,7 @@ async function renderArqueo(){
         // Leer caja inicial y egresos desde caja_turnos (fuente de verdad)
         const ctA=await getCajaTurno(td,a.local,a.turno)||{cajaInicial:0,egresosEfectivo:[]};
         const ini=ctA.cajaInicial||ctA.caja_inicial||0;
-        const tl=a.turnoLabel||a.turno_label||'';
+        const tl=a.turnoLabel||a.turno_label||(a.turno==1?'Turno 1 (8–14h)':'Turno 2 (14–20h)');
         const verif=a.verificado;
         const egEf=ctA.egresosEfectivo||[];
         const totEgEf=egEf.reduce((s,e)=>s+(e.monto||0),0);
@@ -2680,7 +2696,8 @@ async function confirmarCajaInicial(){
   if(monto<0)return toast('El monto no puede ser negativo','error');
   await saveCajaTurno({cajaInicial:monto,cajaInicialConfirmada:true});
   localStorage.setItem(getCajaKey(),'done');
-  await logAct(`Registró caja inicial: ${fmt(monto)} · Turno ${getTurnoActual()}`);
+  const turnoLabel=getTurnoActual()===1?'Turno 1':'Turno 2';
+  await logAct(`Registró caja inicial: ${fmt(monto)} · ${turnoLabel}`);
   toast(`Caja inicial confirmada: ${fmt(monto)}`,'success');
   renderArqueo();refreshCaja();
 }
@@ -2691,7 +2708,7 @@ async function agregarEgresoEf(){
   const monto=parseFloat(document.getElementById('aqEgresoMonto')?.value)||0;
   if(!concepto)return toast('Ingresá un concepto para el egreso','error');
   if(monto<=0)return toast('El monto debe ser mayor a 0','error');
-  const ct=await getCajaTurno(hoy(),ST.localActivo,await getTurnoDeRegistro());
+  const ct=await getCajaTurno(hoy(),ST.localActivo,getTurnoActual());
   const lista=(ct?.egresosEfectivo||[]);
   lista.push({concepto,monto,hora:new Date().toTimeString().slice(0,5)});
   await saveCajaTurno({egresosEfectivo:lista});
@@ -2704,7 +2721,7 @@ async function agregarEgresoEf(){
 
 // Quitar egreso de efectivo por índice
 async function quitarEgresoEf(idx){
-  const ct=await getCajaTurno(hoy(),ST.localActivo,await getTurnoDeRegistro());
+  const ct=await getCajaTurno(hoy(),ST.localActivo,getTurnoActual());
   if(!ct)return;
   const lista=(ct.egresosEfectivo||[]);
   lista.splice(idx,1);
@@ -2737,8 +2754,8 @@ function updDiferenciaEntrega(){
 // Función base que persiste el arqueo — usada por actualizar y cerrar
 async function _persistirArqueo(cerrar){
   const td=hoy();
-  const turno=await getTurnoDeRegistro();
-  const turnoLabel=`Turno ${turno}`;
+  const turno=getTurnoActual();
+  const turnoLabel=turno===1?'Turno 1':'Turno 2';
   // Leer caja_turnos — fuente de verdad para cajaInicial y egresos
   const ct=await getCajaTurno(td,Number(ST.localActivo),Number(turno))||{cajaInicial:0,egresosEfectivo:[]};
   const cajaInicial=ct.cajaInicial||ct.caja_inicial||0;
@@ -2778,9 +2795,7 @@ async function actualizarEstadoCaja(){
 async function guardarArqueo(){
   try{
     const {cajaInicial,efectivoEntregado}=await _persistirArqueo(true);
-    const horaCierre=new Date().toTimeString().slice(0,5);
-    await saveCajaTurno({horaCierre});
-    await logAct(`Guardó cierre de caja · ${localNombre(ST.localActivo)} · Turno ${getTurnoActual()} · Caja: ${fmt(cajaInicial)} · Entregado: ${fmt(efectivoEntregado)} · Cierre: ${horaCierre}`);
+    await logAct(`Guardó cierre de caja · ${localNombre(ST.localActivo)} · Caja: ${fmt(cajaInicial)} · Entregado: ${fmt(efectivoEntregado)}`);
     toast('Cierre de caja enviado al administrador','success');
     closeModal('modalArqueo');refreshCaja();
   }catch(e){toast('Error al guardar: '+e.message,'error');}
@@ -2898,7 +2913,7 @@ function calcComisionLista(cobros){
 async function refreshDash(){
   const cobros=await dbAll('cobros');const turnos=await dbAll('turnos');
   const cl=await dbAll('clientes');const barbs=await dbAll('barberos');
-  const td=hoy();const lc=cobros.filter(c=>Number(c.local)===Number(ST.localActivo));const hc=lc.filter(c=>c.fecha===td);
+  const td=hoy();const lc=cobros.filter(c=>c.local==ST.localActivo);const hc=lc.filter(c=>c.fecha===td);
   const tot=hc.reduce((s,c)=>s+c.total,0);const com=calcComisionLista(hc);
   const th=turnos.filter(t=>t.fecha===td&&t.local==ST.localActivo);
   const pen=th.filter(t=>t.estado!=='completado'&&t.estado!=='cancelado');
@@ -3069,7 +3084,7 @@ function switchBackupTab(tab,el){
   if(tab==='exportar')cargarResumenBackup();
 }
 
-function selFmt(fmt){_bkpFmt=fmt;document.getElementById('fmtJSON').classList.toggle('active',fmt==='JSON');document.getElementById('fmtXML').classList.toggle('active',fmt==='XML');}
+function selFmt(fmt){_bkpFmt=fmt;document.getElementById('fmtJSON').classList.toggle('active',fmt==='JSON');const xEl=document.getElementById('fmtXLSX');if(xEl)xEl.classList.toggle('active',fmt==='XLSX');}
 
 async function cargarResumenBackup(){
   const labels={barberos:'Barberos',clientes:'Clientes',servicios:'Servicios',productos:'Productos',turnos:'Turnos',cobros:'Cobros',usuarios:'Usuarios',historial:'Historial',arqueos:'Arqueos',barberoUsers:'Accesos Portal Barberos',adelantos:'Adelantos',egresos:'Egresos/Consumos',giftcards:'Giftcards'};
@@ -3092,12 +3107,12 @@ async function exportarBackup(){
     descargar(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),`tajos_backup_${ts}_${user}.json`);
     await logAct('Exportó backup en formato JSON');toast('Backup JSON descargado','success');
   }else{
-    descargar(new Blob([jsonAXML(data)],{type:'application/xml'}),`tajos_backup_${ts}_${user}.xml`);
-    await logAct('Exportó backup en formato XML');toast('Backup XML descargado','success');
+    exportarBackupXLSX(data,ts,user);
+    await logAct('Exportó backup en formato XLSX');toast('Backup XLSX descargado','success');
   }
 }
 
-async function exportarRapido(f){_bkpFmt=f;await exportarBackup();closeModal('modalRecordatorioBackup');await doLogout();}
+async function exportarRapido(f){_bkpFmt=f==='XML'?'XLSX':f;await exportarBackup();closeModal('modalRecordatorioBackup');await doLogout();}
 
 async function archivarHistorialAntiguo(){
   // Exporta historial >30 días como XML y lo elimina de la DB
@@ -3143,23 +3158,42 @@ async function verificarAlertaMensual(){
 
 function descargar(blob,nombre){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;a.click();URL.revokeObjectURL(a.href);}
 
-function jsonAXML(data){
-  const esc=v=>v==null?'':String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  let xml=`<?xml version="1.0" encoding="UTF-8"?>\n<TAJOS version="2.0" fecha="${esc(data._meta?.fecha)}">\n`;
+// ── Exportar backup como XLSX (CSV multi-hoja simulado en un solo CSV bien formateado) ──
+function exportarBackupXLSX(data, ts, user){
+  const labels={
+    barberos:'Barberos',clientes:'Clientes',servicios:'Servicios',productos:'Productos',
+    turnos:'Turnos',cobros:'Cobros',usuarios:'Usuarios',historial:'Historial',
+    arqueos:'Arqueos',barberoUsers:'Accesos Portal',adelantos:'Adelantos',
+    egresos:'Consumos',giftcards:'Giftcards'
+  };
+  const q=v=>{
+    if(v==null)return '""';
+    if(typeof v==='object')return '"'+JSON.stringify(v).replace(/"/g,'""')+'"';
+    return '"'+String(v).replace(/"/g,'""')+'"';
+  };
+
+  let csv='﻿'; // BOM para Excel
+  csv+=`"TAJOS · Backup completo","Generado: ${new Date().toLocaleString('es-PY')}","Usuario: ${user}"
+
+`;
+
   for(const store of STORES){
-    const arr=data[store]||[];xml+=`  <${store} total="${arr.length}">\n`;
-    arr.forEach(item=>{
-      xml+=`    <registro id="${esc(item.id)}">\n`;
-      Object.entries(item).filter(([k])=>k!=='id').forEach(([k,v])=>{
-        if(Array.isArray(v))xml+=`      <${k}>${v.map(x=>typeof x==='object'&&x?`<item>${Object.entries(x).map(([ek,ev])=>`<${ek}>${esc(ev)}</${ek}>`).join('')}</item>`:`<item>${esc(x)}</item>`).join('')}</${k}>\n`;
-        else if(typeof v==='object'&&v)xml+=`      <${k}>${Object.entries(v).map(([ek,ev])=>`<${ek}>${esc(ev)}</${ek}>`).join('')}</${k}>\n`;
-        else xml+=`      <${k}>${esc(v)}</${k}>\n`;
-      });
-      xml+=`    </registro>\n`;
+    const arr=(data[store]||[]);
+    if(!arr.length)continue;
+    // Sección header
+    csv+=`"### ${(labels[store]||store).toUpperCase()} (${arr.length} registros)"
+`;
+    // Columnas
+    const cols=Object.keys(arr[0]||{});
+    csv+=cols.map(c=>q(c)).join(',')+'';
+    // Filas
+    arr.forEach(row=>{
+      csv+=cols.map(c=>q(row[c])).join(',')+'';
     });
-    xml+=`  </${store}>\n`;
+    csv+=''; // separador entre secciones
   }
-  return xml+`</TAJOS>`;
+
+  descargar(new Blob([csv],{type:'text/csv;charset=utf-8'}),`tajos_backup_${ts}_${user}.csv`);
 }
 
 async function previewBackup(input){
@@ -3168,8 +3202,7 @@ async function previewBackup(input){
   try{
     const text=await file.text();let data;
     if(file.name.endsWith('.json'))data=JSON.parse(text);
-    else if(file.name.endsWith('.xml'))data=xmlAJSON(text);
-    else{prev.innerHTML='<span style="color:#e74c3c">Formato no soportado (.json o .xml)</span>';prev.style.display='block';btn.disabled=true;return;}
+    else{prev.innerHTML='<span style="color:#e74c3c">Solo se puede restaurar desde archivos .json (el .csv es solo exportación)</span>';prev.style.display='block';btn.disabled=true;return;}
     const labels={barberos:'Barberos',clientes:'Clientes',servicios:'Servicios',productos:'Productos',turnos:'Turnos',cobros:'Cobros',usuarios:'Usuarios',historial:'Historial',arqueos:'Arqueos',barberoUsers:'Accesos Portal Barberos',adelantos:'Adelantos',egresos:'Egresos/Consumos',giftcards:'Giftcards'};
     prev.innerHTML=`<div style="font-family:var(--font-cond);font-size:.8rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">✅ Archivo válido — ${file.name}</div>`+
       STORES.map(s=>`<div style="display:flex;justify-content:space-between;padding:3px 0"><span>${labels[s]||s}</span><span style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${(data[s]||[]).length}</span></div>`).join('')+
@@ -3690,20 +3723,8 @@ async function buscarYAplicarGiftcard(){
 
 // ══ CAJA INICIAL ══
 function getTurnoActual(){
-  return ST.turnoActivo||(new Date().getHours()<14?1:2);
-}
-// Async version: when ST.turnoActivo is null (e.g. page reload without sessionStorage),
-// finds the active caja_turnos record for today before falling back to the clock.
-async function getTurnoDeRegistro(){
-  if(ST.turnoActivo) return ST.turnoActivo;
-  const rows=await dbAll('cajaTurnos');
-  const hoyStr=hoy();
-  const abierto=rows.find(r=>r.fecha===hoyStr&&Number(r.local)===Number(ST.localActivo)&&!(r.horaCierre||r.hora_cierre));
-  if(abierto) return Number(abierto.turno);
-  const cualquiera=[...rows].filter(r=>r.fecha===hoyStr&&Number(r.local)===Number(ST.localActivo))
-    .sort((a,b)=>Number(b.turno)-Number(a.turno))[0];
-  if(cualquiera) return Number(cualquiera.turno);
-  return new Date().getHours()<14?1:2;
+  const h=new Date().getHours();
+  return h<14?1:2;
 }
 // ══════════════════════════════════════════════════════════════
 // [31] CAJA INICIAL — tabla caja_turnos separada de arqueos
@@ -3724,7 +3745,7 @@ async function saveCajaTurno(updates){
   const td=updates.fecha||hoy();
   const local=updates.local!=null?updates.local:ST.localActivo;
   const turno=updates.turno!=null?updates.turno:getTurnoActual();
-  const turnoLabel=`Turno ${turno}`;
+  const turnoLabel=turno===1?'Turno 1':'Turno 2';
   const ex=await getCajaTurno(td,local,turno);
   const merged={
     fecha:td,local,turno,turnoLabel,
@@ -3732,50 +3753,185 @@ async function saveCajaTurno(updates){
     cajaInicial:updates.cajaInicial!=null?updates.cajaInicial:(ex?.cajaInicial||ex?.caja_inicial||0),
     cajaInicialConfirmada:updates.cajaInicialConfirmada!=null?updates.cajaInicialConfirmada:(ex?.cajaInicialConfirmada||ex?.caja_inicial_confirmada||false),
     egresosEfectivo:updates.egresosEfectivo!=null?updates.egresosEfectivo:(ex?.egresosEfectivo||[]),
-    horaInicio:updates.horaInicio!=null?updates.horaInicio:(ex?.horaInicio||ex?.hora_inicio||''),
-    horaCierre:updates.horaCierre!=null?updates.horaCierre:(ex?.horaCierre||ex?.hora_cierre||''),
   };
   if(ex){merged.id=ex.id;await dbPut('cajaTurnos',merged);}
   else{await dbAdd('cajaTurnos',merged);}
   return merged;
 }
 
-async function mostrarCajaInicialSiNecesario(){
-  if(!ST.user||ST.user.rol==='admin')return;
-  const key=getCajaKey();
-  if(localStorage.getItem(key)==='done')return;
-  // Verificar si ya existe en caja_turnos
-  const ct=await getCajaTurno(hoy(),ST.localActivo,await getTurnoDeRegistro());
-  if(ct&&ct.cajaInicialConfirmada){localStorage.setItem(key,'done');return;}
-  // Si ya tenía caja inicial en arqueos (migración), usar ese valor
-  const arqs=await dbAll('arqueos');
-  const td=hoy();const turno=await getTurnoDeRegistro();
-  const exArq=arqs.find(a=>a.fecha===td&&Number(a.local)===Number(ST.localActivo)&&a.turno==turno);
-  if(exArq&&(exArq.cajaInicial||exArq.caja_inicial)){
-    // Migrar a caja_turnos
-    await saveCajaTurno({cajaInicial:exArq.cajaInicial||exArq.caja_inicial||0,cajaInicialConfirmada:true});
-    localStorage.setItem(key,'done');return;
-  }
-  const info=document.getElementById('cajaInicialInfo');
-  if(info)info.textContent=localNombre(ST.localActivo)+' · Turno '+turno+' · '+hoy();
-  const el=document.getElementById('modalCajaInicial');
-  if(el)el.classList.add('visible');
-}
+// Modal de caja inicial deshabilitado — se registra desde el arqueo
+async function mostrarCajaInicialSiNecesario(){ /* no-op: popup eliminado */ }
 
 async function guardarCajaInicial(){
   const monto=parseFloat(document.getElementById('cajaInicialMonto').value)||0;
-  const nota=document.getElementById('cajaInicialNota').value.trim();
   await saveCajaTurno({cajaInicial:monto,cajaInicialConfirmada:true});
-  localStorage.setItem(getCajaKey(),'done');
-  await logAct(`Registró caja inicial: ${fmt(monto)} · Turno ${getTurnoActual()}`);
+  await logAct('Registró caja inicial: '+fmt(monto)+' · Turno '+getTurnoActual());
   toast('Caja inicial registrada: '+fmt(monto),'success');
   document.getElementById('modalCajaInicial').classList.remove('visible');
   refreshCaja();
 }
 
-function omitirCajaInicial(){
-  localStorage.setItem(getCajaKey(),'skipped');
-  document.getElementById('modalCajaInicial').classList.remove('visible');
+function omitirCajaInicial(){document.getElementById('modalCajaInicial').classList.remove('visible');}
+
+// ══ STOCK HELPERS (por sucursal) ══
+function getStockLocal(p,local){
+  const l=String(local!=null?local:ST.localActivo);
+  const s=p.stock;
+  if(s&&typeof s==='object')return Number(s[l]??0);
+  if(typeof s==='number')return l==='1'?s:0;
+  return 0;
+}
+function stockTotalProducto(p){
+  const s=p.stock;
+  if(!s||typeof s!=='object')return typeof s==='number'?s:0;
+  return Object.values(s).reduce((t,v)=>t+Number(v||0),0);
+}
+
+// ══ INVENTARIO ══
+async function renderInventario(){
+  const prods=(await dbAll('productos')).filter(p=>p.activo!==false);
+  const lf=+document.getElementById('invFiltroLocal')?.value||0;
+  const catF=document.getElementById('invFiltroCategoria')?.value||'';
+
+  const cats=[...new Set(prods.map(p=>p.categoria||'Sin categoría'))].sort();
+  const catSel=document.getElementById('invFiltroCategoria');
+  if(catSel){
+    const cur=catSel.value;
+    catSel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${c}"${c===cur?' selected':''}>${c}</option>`).join('');
+  }
+
+  let lista=catF?prods.filter(p=>(p.categoria||'Sin categoría')===catF):prods;
+  lista.sort((a,b)=>{const c=(a.categoria||'Sin categoría').localeCompare(b.categoria||'Sin categoría','es');return c!==0?c:a.nombre.localeCompare(b.nombre,'es');});
+
+  const getStk=p=>lf>0?getStockLocal(p,lf):stockTotalProducto(p);
+  const sinStock=lista.filter(p=>getStk(p)<=0).length;
+  const bajo=lista.filter(p=>getStk(p)>0&&getStk(p)<5).length;
+  const valorTotal=lista.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0);
+  document.getElementById('invStatTotal').textContent=lista.length;
+  document.getElementById('invStatSinStock').textContent=sinStock;
+  document.getElementById('invStatBajo').textContent=bajo;
+  document.getElementById('invStatValor').textContent=fmt(valorTotal);
+
+  if(!lista.length){document.getElementById('invContenido').innerHTML='<div class="empty-state"><div class="icon">📦</div><p>No hay productos</p></div>';return;}
+
+  const grupos={};
+  lista.forEach(p=>{const cat=p.categoria||'Sin categoría';if(!grupos[cat])grupos[cat]=[];grupos[cat].push(p);});
+
+  const stockHeaders=lf>0?'<th>Stock</th>':'<th>Central</th><th>Superseis</th><th>Total</th>';
+
+  document.getElementById('invContenido').innerHTML=Object.entries(grupos).map(([cat,items])=>`
+    <div style="margin-bottom:28px">
+      <div style="font-family:var(--font-cond);font-size:.8rem;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;padding:8px 0 6px;border-bottom:1px solid var(--border-strong);margin-bottom:8px">${cat}</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Producto</th><th>Precio</th>${stockHeaders}<th>Valor</th><th>Estado</th></tr></thead>
+        <tbody>${items.map(p=>{
+          const tot=stockTotalProducto(p);const stk=getStk(p);
+          const sc=stk<=0?'stock-out':stk<5?'stock-low':'stock-ok';
+          const stockCols=lf>0
+            ?`<td style="text-align:center;font-family:var(--font-cond);font-weight:700">${stk}</td>`
+            :`<td style="text-align:center;font-family:var(--font-cond)">${getStockLocal(p,1)}</td><td style="text-align:center;font-family:var(--font-cond)">${getStockLocal(p,2)}</td><td style="text-align:center;font-family:var(--font-cond);font-weight:700">${tot}</td>`;
+          return `<tr>
+            <td><strong>${p.nombre}</strong>${p.descripcion?`<div style="font-size:.75rem;color:var(--text-muted)">${p.descripcion}</div>`:''}</td>
+            <td style="font-family:var(--font-cond);color:var(--text-muted)">${fmt(p.precio)}</td>
+            ${stockCols}
+            <td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(tot*p.precio)}</td>
+            <td><span class="stock-badge ${sc}">${stk<=0?'Sin stock':stk<5?'Stock bajo':'OK'}</span></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+    </div>`).join('');
+}
+
+async function exportarInventarioCSV(){
+  const prods=(await dbAll('productos')).filter(p=>p.activo!==false)
+    .sort((a,b)=>{const c=(a.categoria||'').localeCompare(b.categoria||'','es');return c!==0?c:a.nombre.localeCompare(b.nombre,'es');});
+  const lf=+document.getElementById('invFiltroLocal')?.value||0;
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=[
+    [`INVENTARIO TAJOS — ${new Date().toLocaleString('es-PY')}`],[],
+    lf>0?['Categoría','Producto','Descripción','Precio (Gs.)',`Stock (${localNombre(lf)})`,'Valor (Gs.)']
+        :['Categoría','Producto','Descripción','Precio (Gs.)','Central','Superseis','Total','Valor (Gs.)'],
+  ];
+  let catAct='';
+  prods.forEach(p=>{
+    const cat=p.categoria||'Sin categoría';
+    if(cat!==catAct){rows.push([cat,'','','','','','','']);catAct=cat;}
+    const tot=stockTotalProducto(p);
+    const stockCols=lf>0?[getStockLocal(p,lf)]:[getStockLocal(p,1),getStockLocal(p,2),tot];
+    rows.push(['',p.nombre,p.descripcion||'',Math.round(p.precio),...stockCols,Math.round(tot*p.precio)]);
+  });
+  rows.push([]);
+  const totVal=prods.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0);
+  rows.push(['','TOTAL','','','','','',Math.round(totVal)]);
+  const csv='﻿'+rows.map(r=>r.map(v=>q(v)).join(',')).join('');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),download:`inventario_tajos_${hoy()}.csv`});
+  a.click();
+  toast('Inventario exportado — abrí el .csv en Excel','success');
+}
+
+async function exportarInventarioPDF(){
+  const prods=(await dbAll('productos')).filter(p=>p.activo!==false)
+    .sort((a,b)=>{const c=(a.categoria||'').localeCompare(b.categoria||'','es');return c!==0?c:a.nombre.localeCompare(b.nombre,'es');});
+  const lf=+document.getElementById('invFiltroLocal')?.value||0;
+  const localLabel=lf>0?localNombre(lf):'Todas las sucursales';
+  const grupos={};
+  prods.forEach(p=>{const cat=p.categoria||'Sin categoría';if(!grupos[cat])grupos[cat]=[];grupos[cat].push(p);});
+
+  // Anchos fijos por columna para que quede parejo
+  const sucThs=lf>0
+    ?'<th style="width:12%;text-align:center">Stock</th>'
+    :'<th style="width:10%;text-align:center">Central</th><th style="width:10%;text-align:center">Superseis</th><th style="width:8%;text-align:center">Total</th>';
+  const valW=lf>0?'18%':'14%';
+  const nomW=lf>0?'44%':'38%';
+
+  const tablas=Object.entries(grupos).map(([cat,items])=>`
+    <h3>${cat}</h3>
+    <table><colgroup>
+      <col style="width:${nomW}"><col style="width:13%">
+      ${lf>0?`<col style="width:12%"><col style="width:${valW}">`:
+             `<col style="width:10%"><col style="width:10%"><col style="width:8%"><col style="width:${valW}">`}
+    </colgroup>
+    <thead><tr>
+      <th>Producto</th><th style="text-align:right">Precio</th>
+      ${sucThs}
+      <th style="text-align:right;width:${valW}">Valor</th>
+    </tr></thead>
+    <tbody>${items.map(p=>{
+      const tot=stockTotalProducto(p);
+      const stockCols=lf>0
+        ?`<td style="text-align:center">${getStockLocal(p,lf)}</td>`
+        :`<td style="text-align:center">${getStockLocal(p,1)}</td><td style="text-align:center">${getStockLocal(p,2)}</td><td style="text-align:center;font-weight:700">${tot}</td>`;
+      return `<tr><td>${p.nombre}${p.descripcion?`<br><small>${p.descripcion}</small>`:''}</td><td style="text-align:right">${fmt(p.precio)}</td>${stockCols}<td style="text-align:right">${fmt(tot*p.precio)}</td></tr>`;
+    }).join('')}</tbody></table>`).join('');
+
+  const totVal=prods.reduce((s,p)=>s+stockTotalProducto(p)*p.precio,0);
+  const colSpan=lf>0?3:5;
+  const w=window.open('','_blank','width=960,height=720');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Inventario TAJOS ${hoy()}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,sans-serif;font-size:9.5pt;color:#1a1a2e;padding:20px}
+    h1{font-size:14pt;color:#1a3a6b;margin-bottom:3px}
+    .sub{font-size:8.5pt;color:#555;margin-bottom:16px}
+    h3{font-size:9.5pt;color:#1a3a6b;border-bottom:1.5px solid #1a3a6b;padding-bottom:3px;margin:16px 0 4px;text-transform:uppercase;letter-spacing:.5px}
+    table{width:100%;border-collapse:collapse;table-layout:fixed}
+    th{background:#1a3a6b;color:#fff;padding:5px 7px;font-size:8.5pt;white-space:nowrap;overflow:hidden}
+    td{padding:4px 7px;border-bottom:1px solid #dde3ed;font-size:8.5pt;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    small{font-size:7.5pt;color:#666;font-style:italic;display:block}
+    tr:nth-child(even) td{background:#f4f8fc}
+    .tot td{font-weight:700;border-top:2px solid #1a3a6b;background:#eef2fa!important;font-size:9pt}
+    @media print{body{padding:8px}@page{margin:1.2cm;size:A4}}
+  </style></head><body>
+  <h1>📦 Inventario TAJOS</h1>
+  <div class="sub">${localLabel} · ${new Date().toLocaleString('es-PY')}</div>
+  ${tablas}
+  <table style="margin-top:12px"><tbody>
+    <tr class="tot">
+      <td colspan="${colSpan}">VALOR TOTAL INVENTARIO</td>
+      <td style="text-align:right">${fmt(totVal)}</td>
+    </tr>
+  </tbody></table></body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),400);
 }
 
 // ══ INIT ══
@@ -3789,14 +3945,9 @@ initDB().then(async()=>{
   if(savedUId){
     try{
       const u=await dbGet('usuarios',savedUId);
-      if(u&&u.estado==='activo'){
-        ST.user=u;
-        const st=sessionStorage.getItem('tajos_turno');
-        if(st) ST.turnoActivo=Number(st);
-        showApp();
-      }
-      else{sessionStorage.removeItem('tajos_uid');sessionStorage.removeItem('tajos_turno');}
-    }catch(e){sessionStorage.removeItem('tajos_uid');sessionStorage.removeItem('tajos_turno');}
+      if(u&&u.estado==='activo'){ST.user=u;showApp();}
+      else{sessionStorage.removeItem('tajos_uid');}
+    }catch(e){sessionStorage.removeItem('tajos_uid');}
   }
 }).catch(err=>{
   console.error('DB Error:',err);
