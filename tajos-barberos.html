@@ -484,6 +484,8 @@ function fromDbObj(obj){
   const r={};
   for(const [k,v] of Object.entries(obj)){const ak=FIELD_FROM_DB[k]||k;r[ak]=v;}
   if(r.id!==undefined)r.id=Number(r.id);
+  const horaCols=['hora','horaInicio','hora_inicio','horaCierre','hora_cierre','desde','hasta'];
+  horaCols.forEach(col=>{ if(typeof r[col]==='string'&&r[col].length>5) r[col]=r[col].slice(0,5); });
   // Supabase puede devolver columnas JSONB como string — parsear si es necesario
   ['pagos','items','detalle','egresosEfectivo','egresos_efectivo','acceso'].forEach(col=>{
     if(typeof r[col]==='string'){try{r[col]=JSON.parse(r[col]);}catch(e){r[col]=[];}}
