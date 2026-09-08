@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -259,7 +259,7 @@ tbody tr:last-child td{border-bottom:none;}
       <input class="form-control" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn btn-gold" style="width:100%;margin-top:8px;padding:12px" onclick="doLogin()">Ingresar al Sistema</button>
-    <div style="text-align:center;margin-top:16px;font-size:.75rem;color:var(--text-dim)">TAJOS v1.0 · Acceso restringido</div>
+    <div style="text-align:center;margin-top:16px;font-size:.75rem;color:var(--text-dim)">TAJOS v2.0 · Acceso restringido</div>
     <div style="text-align:center;margin-top:16px;font-size:.75rem;color:var(--text-dim)">Desarrollado por AwterSpacer Dev Ops</div>
   </div>
 </div>
@@ -544,11 +544,8 @@ tbody tr:last-child td{border-bottom:none;}
     </div>
   </div>
   <div id="reporteTabServicios" style="display:none">
-    <div class="card" style="margin-bottom:16px"><div class="card-title">🗂 Servicios Más Populares</div>
+    <div class="card"><div class="card-title">🗂 Servicios Más Populares</div>
       <div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Cantidad</th><th>Total</th><th>% del Total</th></tr></thead><tbody id="rServiciosTbody"></tbody></table></div>
-    </div>
-    <div class="card" id="rDetalleServiciosCard" style="display:none"><div class="card-title">📋 Detalle de Servicios</div>
-      <div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th>Facturado</th></tr></thead><tbody id="rDetalleServiciosTbody"></tbody></table></div>
     </div>
   </div>
   <div id="reporteTabFlujo" style="display:none">
@@ -641,39 +638,19 @@ tbody tr:last-child td{border-bottom:none;}
         <option value="">Todas las categorías</option>
       </select>
       <input type="text" class="form-control" id="invBuscar" placeholder="Buscar..." style="width:150px" oninput="renderInventario()">
+      <button class="btn btn-outline btn-sm" onclick="abrirModalEntradaStock()">📥 Registrar Entrada</button>
+      <button class="btn btn-outline btn-sm" onclick="abrirModalSalidaStock()">📤 Registrar Salida</button>
       <button class="btn btn-gold btn-sm" onclick="openModal('modalNuevoProducto')">＋ Crear Artículo</button>
       <button class="btn btn-outline" onclick="exportarInventarioXLSX()">📊 Exportar XLSX</button>
     </div>
   </div>
-  <div class="tabs">
-    <div class="tab active" onclick="switchInvTab('catalogo',this)">📦 Catálogo</div>
-    <div class="tab" onclick="switchInvTab('movimientos',this)">🔄 Movimientos</div>
-  </div>
-  <div class="grid-4" style="margin-bottom:20px" id="invStatsRow">
+  <div class="grid-4" style="margin-bottom:20px">
     <div class="stat-card"><div class="stat-label">Total productos</div><div class="stat-value" id="invStatTotal">0</div><div class="stat-icon">📦</div></div>
     <div class="stat-card"><div class="stat-label">Sin stock</div><div class="stat-value" id="invStatSinStock" style="color:var(--danger)">0</div><div class="stat-icon">⚠</div></div>
     <div class="stat-card"><div class="stat-label">Stock bajo (&lt;5)</div><div class="stat-value" id="invStatBajo" style="color:#e67e22">0</div><div class="stat-icon">📉</div></div>
     <div class="stat-card"><div class="stat-label">Valor total estimado</div><div class="stat-value" id="invStatValor" style="font-size:1.3rem">Gs. 0</div><div class="stat-icon">💰</div></div>
   </div>
-  <div id="invTabCatalogo">
-    <div class="card"><div id="invContenido"></div></div>
-  </div>
-  <div id="invTabMovimientos" style="display:none">
-    <div class="section-header" style="margin-bottom:14px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-outline btn-sm" onclick="abrirModalEntradaStock()">📥 Registrar Entrada</button>
-        <button class="btn btn-outline btn-sm" onclick="abrirModalSalidaStock()">📤 Registrar Salida</button>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <select class="form-control" id="invMovOrden" style="width:190px" onchange="renderInvMovimientos()">
-          <option value="fecha">Ordenar por fecha</option>
-          <option value="codigo">Ordenar por código</option>
-          <option value="nombre">Ordenar por nombre</option>
-        </select>
-      </div>
-    </div>
-    <div class="card"><div id="invMovContenido"></div></div>
-  </div>
+  <div class="card"><div id="invContenido"></div></div>
 </div>
 
 <!-- GIFTCARDS -->
@@ -1138,8 +1115,8 @@ tbody tr:last-child td{border-bottom:none;}
 
 // ══════════════════════════════════════════════════════════════
 // [1] CONFIG & SUPABASE
-const SUPA_URL='https://sistematajos.duckdns.org';
-const SUPA_KEY='sb_publishable_5SeTVAtyoLryOA7oBW3blv_fEdvR0gW';
+const SUPA_URL='https://tajos-srl.tailfea281.ts.net';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4Nzg2NjUyLCJleHAiOjIxMDQxNDY2NTJ9.LYVLiVIkaalZysEjU55q9j8HWeQ_tWQfq6G4SzHmo54';
 
 // ══════════════════════════════════════════════════════════════
 // MAPA: nombre de store (IndexedDB) → nombre de tabla (Supabase)
@@ -1792,10 +1769,7 @@ function navigate(page){
     if(fd&&!fd.value) fd.value=hoy();
     renderConsumos();
   }
-  if(page==='inventario'){
-    renderInventario();
-    if(document.getElementById('invTabMovimientos')?.style.display!=='none')renderInvMovimientos();
-  }
+  if(page==='inventario')renderInventario();
 }
 
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('visible');}
@@ -2273,10 +2247,7 @@ async function registrarEntradaStock(){
   await logAct(`Entrada de stock: ${cant} u. de "${p.nombre}" (${p.codigo||'s/cód.'}) en ${localNombre(suc)}${factura?' · Factura: '+factura:''}${costo?' · Costo: '+fmt(costo):''}`);
   toast(`Stock de "${p.nombre}" (${localNombre(suc)}) → ${_ant+cant} u.`,'success');
   closeModal('modalEntradaStock');renderCatalogo();populateSels();
-  if(document.getElementById('page-inventario')?.classList.contains('active')){
-    renderInventario();
-    if(document.getElementById('invTabMovimientos')?.style.display!=='none')renderInvMovimientos();
-  }
+  if(document.getElementById('page-inventario')?.classList.contains('active'))renderInventario();
 }
 async function registrarSalidaStock(){
   const prodId=+document.getElementById('salProductoId').value;
@@ -2292,10 +2263,7 @@ async function registrarSalidaStock(){
   await logAct(`Salida de stock: ${cant} u. de "${p.nombre}" (${p.codigo||'s/cód.'}) en ${localNombre(suc)}${concepto?' · Motivo: '+concepto:''}`);
   toast(`Stock de "${p.nombre}" (${localNombre(suc)}) → ${_ant-cant} u.`,'success');
   closeModal('modalSalidaStock');renderCatalogo();populateSels();
-  if(document.getElementById('page-inventario')?.classList.contains('active')){
-    renderInventario();
-    if(document.getElementById('invTabMovimientos')?.style.display!=='none')renderInvMovimientos();
-  }
+  if(document.getElementById('page-inventario')?.classList.contains('active'))renderInventario();
 }
 // ══════════════════════════════════════════════════════════════
 // [15] CLIENTES
@@ -2677,10 +2645,8 @@ async function renderAgenda(){
         return;
       }
 
-      // Turno que comienza aquí — si hay más de uno en el mismo slot (ej. uno cancelado
-      // y otro reagendado encima), el cancelado pierde prioridad y no se muestra.
-      const _tMatches=td.filter(t=>t.hora===hora&&Number(t.barberoId||t.barbero_id)===bid);
-      const t=_tMatches.find(t=>t.estado!=='cancelado')||_tMatches[0];
+      // Turno que comienza aquí
+      const t=td.find(t=>t.hora===hora&&Number(t.barberoId||t.barbero_id)===bid);
       if(t){
         const span   = t._slots||1;
         const durMin = span*30;
@@ -3820,26 +3786,6 @@ async function generarReporte(){
   const sMap={};cobros.forEach(co=>(co.items||[]).filter(i=>i.tipo==='servicio').forEach(i=>{if(!sMap[i.nombre])sMap[i.nombre]={count:0,total:0};sMap[i.nombre].count++;sMap[i.nombre].total+=i.precio;}));
   const sL=Object.entries(sMap).sort((a,b)=>b[1].total-a[1].total);const stot=sL.reduce((s,[,v])=>s+v.total,0);
   document.getElementById('rServiciosTbody').innerHTML=sL.length?sL.map(([n,d])=>`<tr><td><strong>${n}</strong></td><td>${d.count}</td><td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(d.total)}</td><td><div class="comm-bar-wrap"><div class="comm-bar" style="width:${stot?(d.total/stot*100).toFixed(1):0}%"></div></div><span style="font-size:.75rem;color:var(--text-muted)">${stot?(d.total/stot*100).toFixed(1):0}%</span></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state"><p>Sin datos</p></div></td></tr>';
-
-  // Detalle de servicios: solo cuando el reporte está filtrado a 1 barbero puntual,
-  // igual que "Mis Servicios" del portal barbero pero con nombre y apellido del
-  // cliente (dato oculto para el barbero en su propia vista).
-  const detCard=document.getElementById('rDetalleServiciosCard');
-  if(bf>0){
-    const cl=await dbAll('clientes');const cMap={};cl.forEach(c=>cMap[String(c.id)]=c.nombre+' '+c.apellido);
-    const detRows=[];
-    cobros.forEach(co=>(co.items||[]).filter(i=>i.tipo==='servicio').forEach(i=>{
-      detRows.push({fecha:co.fecha,cliente:cMap[String(co.clienteId||co.cliente_id||'')]||'Sin cliente',nombre:i.nombre,precio:i.precio});
-    }));
-    detRows.sort((a,b)=>b.fecha>a.fecha?1:-1);
-    document.getElementById('rDetalleServiciosTbody').innerHTML=detRows.length?detRows.map(r=>`<tr>
-      <td>${fmtD(r.fecha)}</td><td>${r.cliente}</td><td>${r.nombre}</td>
-      <td style="font-family:var(--font-cond);color:var(--gold-light)">${fmt(r.precio)}</td>
-    </tr>`).join(''):'<tr><td colspan="4"><div class="empty-state"><p>Sin servicios en este período</p></div></td></tr>';
-    detCard.style.display='';
-  }else{
-    detCard.style.display='none';
-  }
 }
 
 // Puebla los selectores dependientes de "Tipo de filtro" (semanal/mensual/anual) con
@@ -4092,6 +4038,78 @@ function switchBackupTab(tab,el){
 
 function selFmt(fmt){_bkpFmt=fmt;document.getElementById('fmtJSON').classList.toggle('active',fmt==='JSON');const xEl=document.getElementById('fmtXLSX');if(xEl)xEl.classList.toggle('active',fmt==='XLSX');}
 
+async function cargarResumenBackup(){
+  const labels={barberos:'Barberos',clientes:'Clientes',servicios:'Servicios',productos:'Productos',turnos:'Turnos',cobros:'Cobros',usuarios:'Usuarios',historial:'Historial',arqueos:'Arqueos',barberoUsers:'Accesos Portal Barberos',adelantos:'Adelantos',egresos:'Egresos/Consumos',giftcards:'Giftcards'};
+  const counts={};for(const s of STORES){const d=await dbAll(s);counts[s]=d.length;}
+  document.getElementById('backupResumen').innerHTML=`<div style="font-family:var(--font-cond);font-size:.8rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Contenido del backup</div>`+
+    Object.entries(counts).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(201,148,10,.06)"><span>${labels[k]||k}</span><span style="font-family:var(--font-cond);font-weight:700;color:var(--gold-light)">${v}</span></div>`).join('')+
+    `<div style="margin-top:10px;font-size:.78rem;color:var(--text-dim)">Fecha: ${new Date().toLocaleString('es-PY')}</div>`;
+}
+
+async function recolectarDatos(){
+  const data={_meta:{version:'2.0',sistema:'TAJOS',fecha:new Date().toISOString()}};
+  for(const s of STORES)data[s]=await dbAll(s);
+  return data;
+}
+
+async function exportarBackup(){
+  const data=await recolectarDatos();
+  const ts=hoy();const user=ST.user?.login||'sistema';
+  if(_bkpFmt==='JSON'){
+    descargar(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),`tajos_backup_${ts}_${user}.json`);
+    await logAct('Exportó backup en formato JSON');toast('Backup JSON descargado','success');
+  }else{
+    await exportarBackupXLSX(data,ts,user);
+    await logAct('Exportó backup en formato XLSX');toast('Backup XLSX descargado','success');
+  }
+}
+
+async function exportarRapido(f){_bkpFmt=(f==='XML'?'XLSX':f);await exportarBackup();closeModal('modalRecordatorioBackup');await doLogout();}
+
+async function archivarHistorialAntiguo(){
+  // Exporta historial >30 días como XML y lo elimina de la DB
+  const logs=await dbAll('historial');
+  const limite=new Date();limite.setDate(limite.getDate()-30);const limDS=toDS(limite);
+  const viejos=logs.filter(l=>l.fecha<limDS);
+  if(!viejos.length){toast('No hay registros de historial con más de 30 días','info');return;}
+  // Generar XML del archivo
+  const esc=v=>v==null?'':String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  let xml=`<?xml version="1.0" encoding="UTF-8"?>\n<TajosHistorialArchivo fecha="${new Date().toISOString()}" registros="${viejos.length}">\n`;
+  viejos.forEach(l=>{
+    xml+=`  <registro id="${esc(l.id)}">\n`;
+    Object.entries(l).filter(([k])=>k!=='id').forEach(([k,v])=>{xml+=`    <${k}>${esc(v)}</${k}>\n`;});
+    xml+=`  </registro>\n`;
+  });
+  xml+=`</TajosHistorialArchivo>`;
+  const ts=hoy();
+  descargar(new Blob([xml],{type:'application/xml'}),`tajos_historial_archivo_${ts}.xml`);
+  // Eliminar de la DB
+  for(const l of viejos)await dbDel('historial',l.id);
+  await logAct(`Archivó y eliminó ${viejos.length} registros de historial anteriores a ${limDS}`);
+  toast(`Archivados y eliminados ${viejos.length} registros (>${30} días)`,'success');
+  if(document.getElementById('page-historial')?.classList.contains('active'))renderHistorial();
+}
+
+async function verificarAlertaMensual(){
+  // Mostrar alerta si estamos en los últimos 3 días del mes
+  const hm=new Date();
+  const ultimoDia=new Date(hm.getFullYear(),hm.getMonth()+1,0).getDate();
+  const diasRestantes=ultimoDia-hm.getDate();
+  if(diasRestantes>2)return;
+  const clave=`alertaMes_${hoy().slice(0,7)}`;
+  if(localStorage.getItem(clave))return;
+  localStorage.setItem(clave,'shown');
+  const logs=await dbAll('historial');
+  const limite=new Date();limite.setDate(limite.getDate()-30);const limDS=toDS(limite);
+  const viejos=logs.filter(l=>l.fecha<limDS).length;
+  const msg=viejos>0
+    ? `⚠ Fin de mes próximo. Hay ${viejos} registros de historial con más de 30 días. Se recomienda archivarlos desde Backup → Exportar.`
+    : `📅 Fin de mes en ${diasRestantes} día(s). Recordá hacer el backup mensual.`;
+  setTimeout(()=>toast(msg,'info'),2000);
+}
+
+function descargar(blob,nombre){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nombre;a.click();URL.revokeObjectURL(a.href);}
+
 // ── XLSX helper (SheetJS CDN) ──
 function _xlsxVal(v){
   if(v==null)return'';
@@ -4152,7 +4170,7 @@ async function cargarResumenBackup(){
 }
 
 async function recolectarDatos(){
-  const data={_meta:{version:'1.0',sistema:'TAJOS',fecha:new Date().toISOString()}};
+  const data={_meta:{version:'2.0',sistema:'TAJOS',fecha:new Date().toISOString()}};
   for(const s of STORES)data[s]=await dbAll(s);
   return data;
 }
@@ -4875,21 +4893,6 @@ async function mostrarCajaInicialSiNecesario(){
       : `Efectivo entregado en Turno ${cierreTurno}: ${fmt(sugerido)}`;
   }
 
-  // Respaldo: sessionStorage se pierde al cerrar la pestaña/navegador o cambiar de
-  // dispositivo, así que si no hay sugerencia por esa vía, buscamos directo en el
-  // arqueo cerrado del turno anterior (fuente durable, ya persistida en la base).
-  if(!sugerido && turno>1){
-    const turnoAnt=turno-1;
-    const arqAnt=arqs.find(a=>
-      a.fecha===td && Number(a.local)===Number(ST.localActivo) &&
-      Number(a.turno)===turnoAnt && (a.cerrado===true||a.cerrado===1)
-    );
-    if(arqAnt && arqAnt.efectivoEntregado>0){
-      sugerido=Number(arqAnt.efectivoEntregado)||0;
-      sugeridoLabel=`Efectivo entregado por ${arqAnt.cajero||'Turno '+turnoAnt} (Turno ${turnoAnt}): ${fmt(sugerido)}`;
-    }
-  }
-
   const info=document.getElementById('cajaInicialInfo');
   const turnoLabel=turno===1?'Turno 1 (8–14h)':'Turno 2 (14–20h)';
   if(info)info.textContent=localNombre(ST.localActivo)+' · '+turnoLabel+' · '+td;
@@ -4929,63 +4932,6 @@ async function omitirCajaInicial(){
 // ══════════════════════════════════════════════════════════════
 // [33] INVENTARIO
 // ══════════════════════════════════════════════════════════════
-function switchInvTab(tab,el){
-  document.querySelectorAll('#page-inventario .tabs .tab').forEach(t=>t.classList.remove('active'));
-  if(el)el.classList.add('active');
-  document.getElementById('invTabCatalogo').style.display=tab==='catalogo'?'':'none';
-  document.getElementById('invTabMovimientos').style.display=tab==='movimientos'?'':'none';
-  if(tab==='movimientos')renderInvMovimientos();
-}
-
-// Parsea los movimientos de stock (entrada/salida) desde el historial de acciones,
-// generado por registrarEntradaStock()/registrarSalidaStock() vía logAct().
-const _RE_MOV=/^(Entrada|Salida) de stock: (\d+) u\. de "(.+)" \(([^)]*)\) en ([^·]+?)(?:\s*·\s*(.+))?$/;
-async function _obtenerMovimientosStock(){
-  const hist=await dbAll('historial');
-  const movs=[];
-  hist.forEach(h=>{
-    const m=(h.accion||'').match(_RE_MOV);
-    if(!m)return;
-    movs.push({
-      tipo:m[1]==='Entrada'?'entrada':'salida',
-      cantidad:+m[2],nombre:m[3],codigo:m[4]==='s/cód.'?'':m[4],
-      sucursal:m[5].trim(),detalle:m[6]||'',
-      fecha:h.fecha,hora:h.hora,usuario:h.nombre||h.usuario
-    });
-  });
-  return movs;
-}
-async function renderInvMovimientos(){
-  const orden=document.getElementById('invMovOrden')?.value||'fecha';
-  const movs=await _obtenerMovimientosStock();
-  movs.sort((a,b)=>{
-    if(orden==='codigo')return (a.codigo||'').localeCompare(b.codigo||'','es')||0;
-    if(orden==='nombre')return a.nombre.localeCompare(b.nombre,'es');
-    // fecha: más reciente primero (fecha+hora)
-    const da=a.fecha+' '+a.hora,db=b.fecha+' '+b.hora;
-    return db.localeCompare(da);
-  });
-  const cont=document.getElementById('invMovContenido');
-  if(!movs.length){
-    cont.innerHTML='<div class="empty-state"><div class="icon">🔄</div><p>No hay movimientos de stock registrados</p></div>';
-    return;
-  }
-  cont.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>Fecha</th><th>Tipo</th><th>Código</th><th>Producto</th>
-      <th style="text-align:right">Cantidad</th><th>Sucursal</th><th>Detalle</th><th>Usuario</th></tr></thead>
-    <tbody>${movs.map(m=>`<tr>
-      <td style="font-family:var(--font-cond);white-space:nowrap">${fmtD(m.fecha)} ${m.hora}</td>
-      <td><span class="badge ${m.tipo==='entrada'?'badge-green':'badge-red'}">${m.tipo==='entrada'?'📥 Entrada':'📤 Salida'}</span></td>
-      <td style="color:var(--text-muted)">${m.codigo||'—'}</td>
-      <td><strong>${m.nombre}</strong></td>
-      <td style="text-align:right;font-family:var(--font-cond)">${m.cantidad}</td>
-      <td>${m.sucursal}</td>
-      <td style="color:var(--text-muted);font-size:.82rem">${m.detalle||'—'}</td>
-      <td style="color:var(--text-dim);font-size:.82rem">${m.usuario||'—'}</td>
-    </tr>`).join('')}</tbody>
-  </table></div>`;
-}
-
 async function renderInventario(){
   const prods=await dbAll('productos');
   const activos=prods.filter(p=>p.activo!==false);
