@@ -437,8 +437,8 @@ tbody tr:last-child td{border-bottom:none;}
 // ══════════════════════════════════════════════════════════════
 // CONFIGURACIÓN SUPABASE — reemplazar con tus valores reales
 // ══════════════════════════════════════════════════════════════
-const SUPA_URL='https://sistematajos.duckdns.org';
-const SUPA_KEY='sb_publishable_5SeTVAtyoLryOA7oBW3blv_fEdvR0gW';
+const SUPA_URL='https://tajos-srl.tailfea281.ts.net';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4Nzg2NjUyLCJleHAiOjIxMDQxNDY2NTJ9.LYVLiVIkaalZysEjU55q9j8HWeQ_tWQfq6G4SzHmo54';
 
 const STORE_TABLE={
   barberos:'barberos',clientes:'clientes',servicios:'servicios',productos:'productos',
@@ -653,7 +653,12 @@ async function _cargarBloqueos(local){
 
 const fmt=n=>'Gs. '+(n||0).toLocaleString('es-PY',{minimumFractionDigits:0,maximumFractionDigits:0});
 const fmtD=d=>{if(!d)return '—';return new Date(d+'T00:00:00').toLocaleDateString('es-PY',{day:'2-digit',month:'2-digit',year:'numeric'});};
-const toDS=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const toDS=d=>{
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+};
 const hoy=()=>toDS(new Date());
 const ahora=()=>{const n=new Date();return toDS(n)+' '+n.toTimeString().slice(0,5);};
 
@@ -872,8 +877,7 @@ async function renderAgenda(){
         }
       }
 
-      const _tMatches=misTurnos.filter(t=>t.hora===hora);
-      const t=_tMatches.find(t=>t.estado!=='cancelado')||_tMatches[0];
+      const t=misTurnos.find(t=>t.hora===hora);
       if(t){
         const span=t._slots||1;
         const isCompact=span===1;
@@ -923,8 +927,7 @@ async function renderAgenda(){
       html+=`<div class="time-label" style="padding:10px 6px;border-right:1px solid var(--border)">${hora}</div>`;
       dias.forEach(d=>{
         const fecha=toDS(d);
-        const _tMatches=misTurnos.filter(t=>t.fecha===fecha&&t.hora===hora);
-        const t=_tMatches.find(t=>t.estado!=='cancelado')||_tMatches[0];
+        const t=misTurnos.find(t=>t.fecha===fecha&&t.hora===hora);
         if(t){
           const cn=cMap[t.clienteId]||t.clienteNombre||'—';
           html+=`<div style="padding:3px 5px">
