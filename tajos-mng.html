@@ -814,7 +814,7 @@ tbody tr:last-child td{border-bottom:none;}
       <div style="font-family:var(--font-cond);font-size:.8rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">🔐 Acceso al Portal de Barberos</div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Usuario (portal) *</label><input type="text" class="form-control" id="barberoLoginPortal" placeholder="sin espacios, minúsculas"></div>
-        <div class="form-group"><label class="form-label">PIN *</label><input type="password" class="form-control" id="barbaroPinPortal" placeholder="mínimo 4 dígitos" maxlength="8"></div>
+        <div class="form-group"><label class="form-label">PIN *</label><input type="password" class="form-control" id="barberoPinPortal" placeholder="mínimo 4 dígitos" maxlength="8"></div>
       </div>
       <div class="alert alert-info" style="font-size:.8rem">El barbero usará estas credenciales para ingresar a <strong>tajos-barberos.html</strong></div>
     </div>
@@ -1141,6 +1141,7 @@ const STORE_TABLE = {
   categoriasProd: 'categorias_prod',
   metodosPago:    'metodos_pago',
   bloqueosAgenda: 'bloqueos_agenda',
+  clientesReviewed: 'clientes_reviewed',
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -1883,7 +1884,7 @@ function openModal(id,extra){
   if(id==='modalNuevoBarbero'&&!document.getElementById('barberoEditId').value){
     document.getElementById('barberoIngreso').value=hoy();
     document.getElementById('barberoComision').value=50;
-    ['barberoNombre','barberoApellido','barberoEmail','barberoCelular','barberoLoginPortal','barbaroPinPortal'].forEach(f=>document.getElementById(f).value='');
+    ['barberoNombre','barberoApellido','barberoEmail','barberoCelular','barberoLoginPortal','barberoPinPortal'].forEach(f=>document.getElementById(f).value='');
     document.getElementById('barberoEditId').value='';
     document.getElementById('modalBarberoTitulo').textContent='💈 Nuevo Barbero';
   }
@@ -2404,7 +2405,7 @@ async function renderBarberos(){
 async function guardarBarbero(){
   const id=document.getElementById('barberoEditId').value;
   const loginPortal=document.getElementById('barberoLoginPortal').value.trim().toLowerCase();
-  const pinPortal=document.getElementById('barbaroPinPortal').value.trim();
+  const pinPortal=document.getElementById('barberoPinPortal').value.trim();
   const data={nombre:document.getElementById('barberoNombre').value.trim(),apellido:document.getElementById('barberoApellido').value.trim(),fechaIngreso:document.getElementById('barberoIngreso').value,local:+document.getElementById('barberoLocal').value,celular:document.getElementById('barberoCelular').value.trim(),email:document.getElementById('barberoEmail').value.trim(),comision:+document.getElementById('barberoComision').value||50};
   if(!data.nombre||!data.apellido)return toast('Nombre y apellido son requeridos','error');
   if(!loginPortal)return toast('El usuario del portal es requerido','error');
@@ -2466,7 +2467,7 @@ async function editarBarbero(id){
   // Normalizar IDs a número para compatibilidad con Supabase y IndexedDB
   const bu=bUsers.find(u=>Number(u.barberoId||u.barbero_id)===Number(id));
   document.getElementById('barberoLoginPortal').value=bu?.login||'';
-  document.getElementById('barbaroPinPortal').value=''; // PIN no se pre-rellena por seguridad
+  document.getElementById('barberoPinPortal').value=''; // PIN no se pre-rellena por seguridad
   document.getElementById('modalBarberoTitulo').textContent='✏ Editar Barbero';openModal('modalNuevoBarbero');
 }
 
